@@ -15,9 +15,9 @@
 // ---------------------------------------------------------------------------
 // Configuration — values injected via Vite env vars (never secrets)
 // ---------------------------------------------------------------------------
-export const COGNITO_REGION = import.meta.env.VITE_COGNITO_REGION as string | undefined;
-export const COGNITO_USER_POOL_ID = import.meta.env.VITE_COGNITO_USER_POOL_ID as string | undefined;
-export const COGNITO_CLIENT_ID = import.meta.env.VITE_COGNITO_CLIENT_ID as string | undefined;
+export const COGNITO_REGION = "us-east-1";
+export const COGNITO_USER_POOL_ID = "us-east-1_PhjZfR6YT";
+export const COGNITO_CLIENT_ID = "49qhbnk67bon3fc3g5rad8he1a";
 
 export const AUTH_ENABLED =
   typeof COGNITO_USER_POOL_ID === "string" && COGNITO_USER_POOL_ID.length > 0 &&
