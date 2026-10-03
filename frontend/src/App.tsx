@@ -27,10 +27,22 @@ import { ScenarioComparison } from "./components/ScenarioComparison";
 import {
   getActiveAccount,
   getActiveProfile,
+  getPortfolioCount,
   removeAccount,
+  selectAccount,
   type DemoAccount,
   type DemoProfile,
 } from "./demo-storage";
+import {
+  createAuthPortfolio,
+  getActiveAuthPortfolio,
+  getAuthPortfolioCount,
+  getAuthPortfolios,
+  removeAuthPortfolio,
+  renameAuthPortfolio,
+  selectAuthPortfolio,
+  updateAuthPortfolioHoldings,
+} from "./auth-storage";
 import wealthLensLogo from "./assets/Wealth Lens image .jpeg";
 import type {
   AnalysisResult,
@@ -66,10 +78,26 @@ function App() {
   // Demo profile state (only used when !AUTH_ENABLED)
   const [activeProfile, setActiveProfile] = useState<DemoProfile | null>(() => AUTH_ENABLED ? null : getActiveProfile());
   // Active account - used for BOTH demo mode and authenticated mode
-  // For authenticated users, we create a synthetic account from the backend portfolio
-  const [activeAccount, setActiveAccount] = useState<DemoAccount | null>(() => AUTH_ENABLED ? null : getActiveAccount());
-  // For authenticated users, we need to track portfolios separately
-  const [authPortfolios, setAuthPortfolios] = useState<DemoAccount[]>([]);
+  const [activeAccount, setActiveAccount] = useState<DemoAccount | null>(() => {
+    if (AUTH_ENABLED) {
+      const storedSession = getStoredSession();
+      if (storedSession?.email) {
+        return getActiveAuthPortfolio(storedSession.email);
+      }
+      return null;
+    }
+    return getActiveAccount();
+  });
+  // For authenticated users, portfolios are loaded from auth-storage
+  const [authPortfolios, setAuthPortfolios] = useState<DemoAccount[]>(() => {
+    if (AUTH_ENABLED) {
+      const storedSession = getStoredSession();
+      if (storedSession?.email) {
+        return getAuthPortfolios(storedSession.email);
+      }
+    }
+    return [];
+  });
   const [portfolio, setPortfolio] = useState<Portfolio | null>(null);
   const [scenarios, setScenarios] = useState<ScenarioDefinition[]>([]);
   const [loadError, setLoadError] = useState("");
@@ -109,10 +137,13 @@ function App() {
     if (!AUTH_ENABLED) {
       setActiveProfile(getActiveProfile());
       setActiveAccount(getActiveAccount());
+    } else if (session?.email) {
+      setAuthPortfolios(getAuthPortfolios(session.email));
+      setActiveAccount(getActiveAuthPortfolio(session.email));
     }
     setAnalysis(null);
     setAnalysisError("");
-  }, []);
+  }, [session?.email]);
 
   function handleSignOut() {
     if (AUTH_ENABLED) {
@@ -169,7 +200,12 @@ function App() {
 
   function handleRemovePortfolio() {
     if (!removeDialogAccount) return;
-    const result = removeAccount(removeDialogAccount.id);
+    let result;
+    if (AUTH_ENABLED && session?.email) {
+      result = removeAuthPortfolio(session.email, removeDialogAccount.id);
+    } else {
+      result = removeAccount(removeDialogAccount.id);
+    }
     if (result.success) {
       setRemoveDialogAccount(null);
       setPortfolioIsDirty(false);
@@ -186,16 +222,14 @@ function App() {
       .then(([p, s]) => {
         setPortfolio(p);
         setScenarios(s);
-        // For authenticated users, create a default account from the backend portfolio
-        if (AUTH_ENABLED && !activeAccount) {
-          const defaultAccount: DemoAccount = {
-            id: "auth_default",
-            name: "My Portfolio",
-            customHoldings: null,
-            createdAt: new Date().toISOString(),
-          };
-          setActiveAccount(defaultAccount);
-          setAuthPortfolios([defaultAccount]);
+        // For authenticated users, initialize from auth-storage if not already loaded
+        if (AUTH_ENABLED && session?.email) {
+          const portfolios = getAuthPortfolios(session.email);
+          const active = getActiveAuthPortfolio(session.email);
+          setAuthPortfolios(portfolios);
+          if (active) {
+            setActiveAccount(active);
+          }
         }
       })
       .catch((err: unknown) => {
@@ -204,7 +238,7 @@ function App() {
       })
       .finally(() => setIsLoading(false));
     return () => ac.abort();
-  }, []);
+  }, [session?.email]);
 
   const selectedScenario = scenarios.find((s) => s.key === selectedKey) ?? null;
 
@@ -354,22 +388,21 @@ function App() {
       {activeAccount && (
         <div className="account-bar">
           <div className="account-bar-inner">
-            {AUTH_ENABLED ? (
+            {AUTH_ENABLED && session?.email ? (
               <PortfolioToolbar
                 profile={{
                   id: "auth_profile",
-                  name: session?.email ?? "User",
+                  name: session.email,
                   accounts: authPortfolios,
-                  activeAccountId: activeAccount.id,
-                  createdAt: activeAccount.createdAt,
+                  activeAccountId: activeAccount?.id ?? authPortfolios[0]?.id ?? "",
+                  createdAt: activeAccount?.createdAt ?? new Date().toISOString(),
                 }}
                 onAccountChange={() => {
-                  // For authenticated users, refresh from authPortfolios state
-                  setAnalysis(null);
-                  setAnalysisError("");
+                  refreshDemoState();
                 }}
                 onRemoveRequest={(account) => setRemoveDialogAccount(account)}
                 disabled={portfolioIsDirty}
+                userEmail={session.email}
               />
             ) : activeProfile ? (
               <PortfolioToolbar
@@ -429,9 +462,33 @@ function App() {
           <PortfolioPage
             account={activeAccount}
             onDirtyChange={setPortfolioIsDirty}
-            onSave={() => { setPortfolioIsDirty(false); refreshDemoState(); setAnalysis(null); setAnalysisError(""); if (pendingNav) { setNavTab(pendingNav); setPendingNav(null); } if (pendingAccountSwitch) { import("./demo-storage").then(({ selectAccount }) => { selectAccount(pendingAccountSwitch); setPendingAccountSwitch(null); refreshDemoState(); }); } }}
+            onSave={() => {
+              setPortfolioIsDirty(false);
+              refreshDemoState();
+              setAnalysis(null);
+              setAnalysisError("");
+              if (pendingNav) {
+                const targetNav = pendingNav;
+                setPendingNav(null);
+                setNavTab(targetNav);
+              }
+              if (pendingAccountSwitch) {
+                const targetAccount = pendingAccountSwitch;
+                setPendingAccountSwitch(null);
+                if (AUTH_ENABLED && session?.email) {
+                  selectAuthPortfolio(session.email, targetAccount);
+                  refreshDemoState();
+                } else {
+                  import("./demo-storage").then(({ selectAccount }) => {
+                    selectAccount(targetAccount);
+                    refreshDemoState();
+                  });
+                }
+              }
+            }}
             saveRequested={!!(pendingNav || pendingAccountSwitch)}
             onExplore={() => setNavTab("explore")}
+            userEmail={AUTH_ENABLED ? session?.email : undefined}
           />
         ) : navTab === "explore" ? (
           <>
