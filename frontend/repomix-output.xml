@@ -1,0 +1,2724 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+public/
+  favicon.svg
+  icons.svg
+src/
+  assets/
+    hero.png
+    react.svg
+    vite.svg
+  components/
+    AnalysisResults.tsx
+    HoldingContributions.tsx
+  mocks/
+    fixtures.ts
+  api.ts
+  App.css
+  App.tsx
+  index.css
+  main.tsx
+  types.ts
+.env.development:
+.gitignore
+.oxlintrc.json
+index.html
+package.json
+README.md
+tsconfig.app.json
+tsconfig.json
+tsconfig.node.json
+vite.config.ts
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="public/favicon.svg">
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="46" fill="none" viewBox="0 0 48 46"><path fill="#863bff" d="M25.946 44.938c-.664.845-2.021.375-2.021-.698V33.937a2.26 2.26 0 0 0-2.262-2.262H10.287c-.92 0-1.456-1.04-.92-1.788l7.48-10.471c1.07-1.497 0-3.578-1.842-3.578H1.237c-.92 0-1.456-1.04-.92-1.788L10.013.474c.214-.297.556-.474.92-.474h28.894c.92 0 1.456 1.04.92 1.788l-7.48 10.471c-1.07 1.498 0 3.579 1.842 3.579h11.377c.943 0 1.473 1.088.89 1.83L25.947 44.94z" style="fill:#863bff;fill:color(display-p3 .5252 .23 1);fill-opacity:1"/><mask id="a" width="48" height="46" x="0" y="0" maskUnits="userSpaceOnUse" style="mask-type:alpha"><path fill="#000" d="M25.842 44.938c-.664.844-2.021.375-2.021-.698V33.937a2.26 2.26 0 0 0-2.262-2.262H10.183c-.92 0-1.456-1.04-.92-1.788l7.48-10.471c1.07-1.498 0-3.579-1.842-3.579H1.133c-.92 0-1.456-1.04-.92-1.787L9.91.473c.214-.297.556-.474.92-.474h28.894c.92 0 1.456 1.04.92 1.788l-7.48 10.471c-1.07 1.498 0 3.578 1.842 3.578h11.377c.943 0 1.473 1.088.89 1.832L25.843 44.94z" style="fill:#000;fill-opacity:1"/></mask><g mask="url(#a)"><g filter="url(#b)"><ellipse cx="5.508" cy="14.704" fill="#ede6ff" rx="5.508" ry="14.704" style="fill:#ede6ff;fill:color(display-p3 .9275 .9033 1);fill-opacity:1" transform="matrix(.00324 1 1 -.00324 -4.47 31.516)"/></g><g filter="url(#c)"><ellipse cx="10.399" cy="29.851" fill="#ede6ff" rx="10.399" ry="29.851" style="fill:#ede6ff;fill:color(display-p3 .9275 .9033 1);fill-opacity:1" transform="matrix(.00324 1 1 -.00324 -39.328 7.883)"/></g><g filter="url(#d)"><ellipse cx="5.508" cy="30.487" fill="#7e14ff" rx="5.508" ry="30.487" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(89.814 -25.913 -14.639)scale(1 -1)"/></g><g filter="url(#e)"><ellipse cx="5.508" cy="30.599" fill="#7e14ff" rx="5.508" ry="30.599" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(89.814 -32.644 -3.334)scale(1 -1)"/></g><g filter="url(#f)"><ellipse cx="5.508" cy="30.599" fill="#7e14ff" rx="5.508" ry="30.599" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="matrix(.00324 1 1 -.00324 -34.34 30.47)"/></g><g filter="url(#g)"><ellipse cx="14.072" cy="22.078" fill="#ede6ff" rx="14.072" ry="22.078" style="fill:#ede6ff;fill:color(display-p3 .9275 .9033 1);fill-opacity:1" transform="rotate(93.35 24.506 48.493)scale(-1 1)"/></g><g filter="url(#h)"><ellipse cx="3.47" cy="21.501" fill="#7e14ff" rx="3.47" ry="21.501" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(89.009 28.708 47.59)scale(-1 1)"/></g><g filter="url(#i)"><ellipse cx="3.47" cy="21.501" fill="#7e14ff" rx="3.47" ry="21.501" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(89.009 28.708 47.59)scale(-1 1)"/></g><g filter="url(#j)"><ellipse cx=".387" cy="8.972" fill="#7e14ff" rx="4.407" ry="29.108" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(39.51 .387 8.972)"/></g><g filter="url(#k)"><ellipse cx="47.523" cy="-6.092" fill="#7e14ff" rx="4.407" ry="29.108" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(37.892 47.523 -6.092)"/></g><g filter="url(#l)"><ellipse cx="41.412" cy="6.333" fill="#47bfff" rx="5.971" ry="9.665" style="fill:#47bfff;fill:color(display-p3 .2799 .748 1);fill-opacity:1" transform="rotate(37.892 41.412 6.333)"/></g><g filter="url(#m)"><ellipse cx="-1.879" cy="38.332" fill="#7e14ff" rx="4.407" ry="29.108" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(37.892 -1.88 38.332)"/></g><g filter="url(#n)"><ellipse cx="-1.879" cy="38.332" fill="#7e14ff" rx="4.407" ry="29.108" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(37.892 -1.88 38.332)"/></g><g filter="url(#o)"><ellipse cx="35.651" cy="29.907" fill="#7e14ff" rx="4.407" ry="29.108" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(37.892 35.651 29.907)"/></g><g filter="url(#p)"><ellipse cx="38.418" cy="32.4" fill="#47bfff" rx="5.971" ry="15.297" style="fill:#47bfff;fill:color(display-p3 .2799 .748 1);fill-opacity:1" transform="rotate(37.892 38.418 32.4)"/></g></g><defs><filter id="b" width="60.045" height="41.654" x="-19.77" y="16.149" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="7.659"/></filter><filter id="c" width="90.34" height="51.437" x="-54.613" y="-7.533" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="7.659"/></filter><filter id="d" width="79.355" height="29.4" x="-49.64" y="2.03" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="e" width="79.579" height="29.4" x="-45.045" y="20.029" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="f" width="79.579" height="29.4" x="-43.513" y="21.178" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="g" width="74.749" height="58.852" x="15.756" y="-17.901" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="7.659"/></filter><filter id="h" width="61.377" height="25.362" x="23.548" y="2.284" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="i" width="61.377" height="25.362" x="23.548" y="2.284" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="j" width="56.045" height="63.649" x="-27.636" y="-22.853" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="k" width="54.814" height="64.646" x="20.116" y="-38.415" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="l" width="33.541" height="35.313" x="24.641" y="-11.323" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="m" width="54.814" height="64.646" x="-29.286" y="6.009" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="n" width="54.814" height="64.646" x="-29.286" y="6.009" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="o" width="54.814" height="64.646" x="8.244" y="-2.416" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="p" width="39.409" height="43.623" x="18.713" y="10.588" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter></defs></svg>
+</file>
+
+<file path="public/icons.svg">
+<svg xmlns="http://www.w3.org/2000/svg">
+  <symbol id="bluesky-icon" viewBox="0 0 16 17">
+    <g clip-path="url(#bluesky-clip)"><path fill="#08060d" d="M7.75 7.735c-.693-1.348-2.58-3.86-4.334-5.097-1.68-1.187-2.32-.981-2.74-.79C.188 2.065.1 2.812.1 3.251s.241 3.602.398 4.13c.52 1.744 2.367 2.333 4.07 2.145-2.495.37-4.71 1.278-1.805 4.512 3.196 3.309 4.38-.71 4.987-2.746.608 2.036 1.307 5.91 4.93 2.746 2.72-2.746.747-4.143-1.747-4.512 1.702.189 3.55-.4 4.07-2.145.156-.528.397-3.691.397-4.13s-.088-1.186-.575-1.406c-.42-.19-1.06-.395-2.741.79-1.755 1.24-3.64 3.752-4.334 5.099"/></g>
+    <defs><clipPath id="bluesky-clip"><path fill="#fff" d="M.1.85h15.3v15.3H.1z"/></clipPath></defs>
+  </symbol>
+  <symbol id="discord-icon" viewBox="0 0 20 19">
+    <path fill="#08060d" d="M16.224 3.768a14.5 14.5 0 0 0-3.67-1.153c-.158.286-.343.67-.47.976a13.5 13.5 0 0 0-4.067 0c-.128-.306-.317-.69-.476-.976A14.4 14.4 0 0 0 3.868 3.77C1.546 7.28.916 10.703 1.231 14.077a14.7 14.7 0 0 0 4.5 2.306q.545-.748.965-1.587a9.5 9.5 0 0 1-1.518-.74q.191-.14.372-.293c2.927 1.369 6.107 1.369 8.999 0q.183.152.372.294-.723.437-1.52.74.418.838.963 1.588a14.6 14.6 0 0 0 4.504-2.308c.37-3.911-.63-7.302-2.644-10.309m-9.13 8.234c-.878 0-1.599-.82-1.599-1.82 0-.998.705-1.82 1.6-1.82.894 0 1.614.82 1.599 1.82.001 1-.705 1.82-1.6 1.82m5.91 0c-.878 0-1.599-.82-1.599-1.82 0-.998.705-1.82 1.6-1.82.893 0 1.614.82 1.599 1.82 0 1-.706 1.82-1.6 1.82"/>
+  </symbol>
+  <symbol id="documentation-icon" viewBox="0 0 21 20">
+    <path fill="none" stroke="#aa3bff" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.35" d="m15.5 13.333 1.533 1.322c.645.555.967.833.967 1.178s-.322.623-.967 1.179L15.5 18.333m-3.333-5-1.534 1.322c-.644.555-.966.833-.966 1.178s.322.623.966 1.179l1.534 1.321"/>
+    <path fill="none" stroke="#aa3bff" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.35" d="M17.167 10.836v-4.32c0-1.41 0-2.117-.224-2.68-.359-.906-1.118-1.621-2.08-1.96-.599-.21-1.349-.21-2.848-.21-2.623 0-3.935 0-4.983.369-1.684.591-3.013 1.842-3.641 3.428C3 6.449 3 7.684 3 10.154v2.122c0 2.558 0 3.838.706 4.726q.306.383.713.671c.76.536 1.79.64 3.581.66"/>
+    <path fill="none" stroke="#aa3bff" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.35" d="M3 10a2.78 2.78 0 0 1 2.778-2.778c.555 0 1.209.097 1.748-.047.48-.129.854-.503.982-.982.145-.54.048-1.194.048-1.749a2.78 2.78 0 0 1 2.777-2.777"/>
+  </symbol>
+  <symbol id="github-icon" viewBox="0 0 19 19">
+    <path fill="#08060d" fill-rule="evenodd" d="M9.356 1.85C5.05 1.85 1.57 5.356 1.57 9.694a7.84 7.84 0 0 0 5.324 7.44c.387.079.528-.168.528-.376 0-.182-.013-.805-.013-1.454-2.165.467-2.616-.935-2.616-.935-.349-.91-.864-1.143-.864-1.143-.71-.48.051-.48.051-.48.787.051 1.2.805 1.2.805.695 1.194 1.817.857 2.268.649.064-.507.27-.857.49-1.052-1.728-.182-3.545-.857-3.545-3.87 0-.857.31-1.558.8-2.104-.078-.195-.349-1 .077-2.078 0 0 .657-.208 2.14.805a7.5 7.5 0 0 1 1.946-.26c.657 0 1.328.092 1.946.26 1.483-1.013 2.14-.805 2.14-.805.426 1.078.155 1.883.078 2.078.502.546.799 1.247.799 2.104 0 3.013-1.818 3.675-3.558 3.87.284.247.528.714.528 1.454 0 1.052-.012 1.896-.012 2.156 0 .208.142.455.528.377a7.84 7.84 0 0 0 5.324-7.441c.013-4.338-3.48-7.844-7.773-7.844" clip-rule="evenodd"/>
+  </symbol>
+  <symbol id="social-icon" viewBox="0 0 20 20">
+    <path fill="none" stroke="#aa3bff" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.35" d="M12.5 6.667a4.167 4.167 0 1 0-8.334 0 4.167 4.167 0 0 0 8.334 0"/>
+    <path fill="none" stroke="#aa3bff" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.35" d="M2.5 16.667a5.833 5.833 0 0 1 8.75-5.053m3.837.474.513 1.035c.07.144.257.282.414.309l.93.155c.596.1.736.536.307.965l-.723.73a.64.64 0 0 0-.152.531l.207.903c.164.715-.213.991-.84.618l-.872-.52a.63.63 0 0 0-.577 0l-.872.52c-.624.373-1.003.094-.84-.618l.207-.903a.64.64 0 0 0-.152-.532l-.723-.729c-.426-.43-.289-.864.306-.964l.93-.156a.64.64 0 0 0 .412-.31l.513-1.034c.28-.562.735-.562 1.012 0"/>
+  </symbol>
+  <symbol id="x-icon" viewBox="0 0 19 19">
+    <path fill="#08060d" fill-rule="evenodd" d="M1.893 1.98c.052.072 1.245 1.769 2.653 3.77l2.892 4.114c.183.261.333.48.333.486s-.068.089-.152.183l-.522.593-.765.867-3.597 4.087c-.375.426-.734.834-.798.905a1 1 0 0 0-.118.148c0 .01.236.017.664.017h.663l.729-.83c.4-.457.796-.906.879-.999a692 692 0 0 0 1.794-2.038c.034-.037.301-.34.594-.675l.551-.624.345-.392a7 7 0 0 1 .34-.374c.006 0 .93 1.306 2.052 2.903l2.084 2.965.045.063h2.275c1.87 0 2.273-.003 2.266-.021-.008-.02-1.098-1.572-3.894-5.547-2.013-2.862-2.28-3.246-2.273-3.266.008-.019.282-.332 2.085-2.38l2-2.274 1.567-1.782c.022-.028-.016-.03-.65-.03h-.674l-.3.342a871 871 0 0 1-1.782 2.025c-.067.075-.405.458-.75.852a100 100 0 0 1-.803.91c-.148.172-.299.344-.99 1.127-.304.343-.32.358-.345.327-.015-.019-.904-1.282-1.976-2.808L6.365 1.85H1.8zm1.782.91 8.078 11.294c.772 1.08 1.413 1.973 1.425 1.984.016.017.241.02 1.05.017l1.03-.004-2.694-3.766L7.796 5.75 5.722 2.852l-1.039-.004-1.039-.004z" clip-rule="evenodd"/>
+  </symbol>
+</svg>
+</file>
+
+<file path="src/assets/react.svg">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" class="iconify iconify--logos" width="35.93" height="32" preserveAspectRatio="xMidYMid meet" viewBox="0 0 256 228"><path fill="#00D8FF" d="M210.483 73.824a171.49 171.49 0 0 0-8.24-2.597c.465-1.9.893-3.777 1.273-5.621c6.238-30.281 2.16-54.676-11.769-62.708c-13.355-7.7-35.196.329-57.254 19.526a171.23 171.23 0 0 0-6.375 5.848a155.866 155.866 0 0 0-4.241-3.917C100.759 3.829 77.587-4.822 63.673 3.233C50.33 10.957 46.379 33.89 51.995 62.588a170.974 170.974 0 0 0 1.892 8.48c-3.28.932-6.445 1.924-9.474 2.98C17.309 83.498 0 98.307 0 113.668c0 15.865 18.582 31.778 46.812 41.427a145.52 145.52 0 0 0 6.921 2.165a167.467 167.467 0 0 0-2.01 9.138c-5.354 28.2-1.173 50.591 12.134 58.266c13.744 7.926 36.812-.22 59.273-19.855a145.567 145.567 0 0 0 5.342-4.923a168.064 168.064 0 0 0 6.92 6.314c21.758 18.722 43.246 26.282 56.54 18.586c13.731-7.949 18.194-32.003 12.4-61.268a145.016 145.016 0 0 0-1.535-6.842c1.62-.48 3.21-.974 4.76-1.488c29.348-9.723 48.443-25.443 48.443-41.52c0-15.417-17.868-30.326-45.517-39.844Zm-6.365 70.984c-1.4.463-2.836.91-4.3 1.345c-3.24-10.257-7.612-21.163-12.963-32.432c5.106-11 9.31-21.767 12.459-31.957c2.619.758 5.16 1.557 7.61 2.4c23.69 8.156 38.14 20.213 38.14 29.504c0 9.896-15.606 22.743-40.946 31.14Zm-10.514 20.834c2.562 12.94 2.927 24.64 1.23 33.787c-1.524 8.219-4.59 13.698-8.382 15.893c-8.067 4.67-25.32-1.4-43.927-17.412a156.726 156.726 0 0 1-6.437-5.87c7.214-7.889 14.423-17.06 21.459-27.246c12.376-1.098 24.068-2.894 34.671-5.345a134.17 134.17 0 0 1 1.386 6.193ZM87.276 214.515c-7.882 2.783-14.16 2.863-17.955.675c-8.075-4.657-11.432-22.636-6.853-46.752a156.923 156.923 0 0 1 1.869-8.499c10.486 2.32 22.093 3.988 34.498 4.994c7.084 9.967 14.501 19.128 21.976 27.15a134.668 134.668 0 0 1-4.877 4.492c-9.933 8.682-19.886 14.842-28.658 17.94ZM50.35 144.747c-12.483-4.267-22.792-9.812-29.858-15.863c-6.35-5.437-9.555-10.836-9.555-15.216c0-9.322 13.897-21.212 37.076-29.293c2.813-.98 5.757-1.905 8.812-2.773c3.204 10.42 7.406 21.315 12.477 32.332c-5.137 11.18-9.399 22.249-12.634 32.792a134.718 134.718 0 0 1-6.318-1.979Zm12.378-84.26c-4.811-24.587-1.616-43.134 6.425-47.789c8.564-4.958 27.502 2.111 47.463 19.835a144.318 144.318 0 0 1 3.841 3.545c-7.438 7.987-14.787 17.08-21.808 26.988c-12.04 1.116-23.565 2.908-34.161 5.309a160.342 160.342 0 0 1-1.76-7.887Zm110.427 27.268a347.8 347.8 0 0 0-7.785-12.803c8.168 1.033 15.994 2.404 23.343 4.08c-2.206 7.072-4.956 14.465-8.193 22.045a381.151 381.151 0 0 0-7.365-13.322Zm-45.032-43.861c5.044 5.465 10.096 11.566 15.065 18.186a322.04 322.04 0 0 0-30.257-.006c4.974-6.559 10.069-12.652 15.192-18.18ZM82.802 87.83a323.167 323.167 0 0 0-7.227 13.238c-3.184-7.553-5.909-14.98-8.134-22.152c7.304-1.634 15.093-2.97 23.209-3.984a321.524 321.524 0 0 0-7.848 12.897Zm8.081 65.352c-8.385-.936-16.291-2.203-23.593-3.793c2.26-7.3 5.045-14.885 8.298-22.6a321.187 321.187 0 0 0 7.257 13.246c2.594 4.48 5.28 8.868 8.038 13.147Zm37.542 31.03c-5.184-5.592-10.354-11.779-15.403-18.433c4.902.192 9.899.29 14.978.29c5.218 0 10.376-.117 15.453-.343c-4.985 6.774-10.018 12.97-15.028 18.486Zm52.198-57.817c3.422 7.8 6.306 15.345 8.596 22.52c-7.422 1.694-15.436 3.058-23.88 4.071a382.417 382.417 0 0 0 7.859-13.026a347.403 347.403 0 0 0 7.425-13.565Zm-16.898 8.101a358.557 358.557 0 0 1-12.281 19.815a329.4 329.4 0 0 1-23.444.823c-7.967 0-15.716-.248-23.178-.732a310.202 310.202 0 0 1-12.513-19.846h.001a307.41 307.41 0 0 1-10.923-20.627a310.278 310.278 0 0 1 10.89-20.637l-.001.001a307.318 307.318 0 0 1 12.413-19.761c7.613-.576 15.42-.876 23.31-.876H128c7.926 0 15.743.303 23.354.883a329.357 329.357 0 0 1 12.335 19.695a358.489 358.489 0 0 1 11.036 20.54a329.472 329.472 0 0 1-11 20.722Zm22.56-122.124c8.572 4.944 11.906 24.881 6.52 51.026c-.344 1.668-.73 3.367-1.15 5.09c-10.622-2.452-22.155-4.275-34.23-5.408c-7.034-10.017-14.323-19.124-21.64-27.008a160.789 160.789 0 0 1 5.888-5.4c18.9-16.447 36.564-22.941 44.612-18.3ZM128 90.808c12.625 0 22.86 10.235 22.86 22.86s-10.235 22.86-22.86 22.86s-22.86-10.235-22.86-22.86s10.235-22.86 22.86-22.86Z"></path></svg>
+</file>
+
+<file path="src/assets/vite.svg">
+<svg xmlns="http://www.w3.org/2000/svg" width="77" height="47" fill="none" aria-labelledby="vite-logo-title" viewBox="0 0 77 47"><title id="vite-logo-title">Vite</title><style>.parenthesis{fill:#000}@media (prefers-color-scheme:dark){.parenthesis{fill:#fff}}</style><path fill="#9135ff" d="M40.151 45.71c-.663.844-2.02.374-2.02-.699V34.708a2.26 2.26 0 0 0-2.262-2.262H24.493c-.92 0-1.457-1.04-.92-1.788l7.479-10.471c1.07-1.498 0-3.578-1.842-3.578H15.443c-.92 0-1.456-1.04-.92-1.788l9.696-13.576c.213-.297.556-.474.92-.474h28.894c.92 0 1.456 1.04.92 1.788l-7.48 10.472c-1.07 1.497 0 3.578 1.842 3.578h11.376c.944 0 1.474 1.087.89 1.83L40.153 45.712z"/><mask id="a" width="48" height="47" x="14" y="0" maskUnits="userSpaceOnUse" style="mask-type:alpha"><path fill="#000" d="M40.047 45.71c-.663.843-2.02.374-2.02-.699V34.708a2.26 2.26 0 0 0-2.262-2.262H24.389c-.92 0-1.457-1.04-.92-1.788l7.479-10.472c1.07-1.497 0-3.578-1.842-3.578H15.34c-.92 0-1.456-1.04-.92-1.788l9.696-13.575c.213-.297.556-.474.92-.474H53.93c.92 0 1.456 1.04.92 1.788L47.37 13.03c-1.07 1.498 0 3.578 1.842 3.578h11.376c.944 0 1.474 1.088.89 1.831L40.049 45.712z"/></mask><g mask="url(#a)"><g filter="url(#b)"><ellipse cx="5.508" cy="14.704" fill="#eee6ff" rx="5.508" ry="14.704" transform="rotate(269.814 20.96 11.29)scale(-1 1)"/></g><g filter="url(#c)"><ellipse cx="10.399" cy="29.851" fill="#eee6ff" rx="10.399" ry="29.851" transform="rotate(89.814 -16.902 -8.275)scale(1 -1)"/></g><g filter="url(#d)"><ellipse cx="5.508" cy="30.487" fill="#8900ff" rx="5.508" ry="30.487" transform="rotate(89.814 -19.197 -7.127)scale(1 -1)"/></g><g filter="url(#e)"><ellipse cx="5.508" cy="30.599" fill="#8900ff" rx="5.508" ry="30.599" transform="rotate(89.814 -25.928 4.177)scale(1 -1)"/></g><g filter="url(#f)"><ellipse cx="5.508" cy="30.599" fill="#8900ff" rx="5.508" ry="30.599" transform="rotate(89.814 -25.738 5.52)scale(1 -1)"/></g><g filter="url(#g)"><ellipse cx="14.072" cy="22.078" fill="#eee6ff" rx="14.072" ry="22.078" transform="rotate(93.35 31.245 55.578)scale(-1 1)"/></g><g filter="url(#h)"><ellipse cx="3.47" cy="21.501" fill="#8900ff" rx="3.47" ry="21.501" transform="rotate(89.009 35.419 55.202)scale(-1 1)"/></g><g filter="url(#i)"><ellipse cx="3.47" cy="21.501" fill="#8900ff" rx="3.47" ry="21.501" transform="rotate(89.009 35.419 55.202)scale(-1 1)"/></g><g filter="url(#j)"><ellipse cx="14.592" cy="9.743" fill="#8900ff" rx="4.407" ry="29.108" transform="rotate(39.51 14.592 9.743)"/></g><g filter="url(#k)"><ellipse cx="61.728" cy="-5.321" fill="#8900ff" rx="4.407" ry="29.108" transform="rotate(37.892 61.728 -5.32)"/></g><g filter="url(#l)"><ellipse cx="55.618" cy="7.104" fill="#00c2ff" rx="5.971" ry="9.665" transform="rotate(37.892 55.618 7.104)"/></g><g filter="url(#m)"><ellipse cx="12.326" cy="39.103" fill="#8900ff" rx="4.407" ry="29.108" transform="rotate(37.892 12.326 39.103)"/></g><g filter="url(#n)"><ellipse cx="12.326" cy="39.103" fill="#8900ff" rx="4.407" ry="29.108" transform="rotate(37.892 12.326 39.103)"/></g><g filter="url(#o)"><ellipse cx="49.857" cy="30.678" fill="#8900ff" rx="4.407" ry="29.108" transform="rotate(37.892 49.857 30.678)"/></g><g filter="url(#p)"><ellipse cx="52.623" cy="33.171" fill="#00c2ff" rx="5.971" ry="15.297" transform="rotate(37.892 52.623 33.17)"/></g></g><path d="M6.919 0c-9.198 13.166-9.252 33.575 0 46.789h6.215c-9.25-13.214-9.196-33.623 0-46.789zm62.424 0h-6.215c9.198 13.166 9.252 33.575 0 46.789h6.215c9.25-13.214 9.196-33.623 0-46.789" class="parenthesis"/><defs><filter id="b" width="60.045" height="41.654" x="-5.564" y="16.92" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="7.659"/></filter><filter id="c" width="90.34" height="51.437" x="-40.407" y="-6.762" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="7.659"/></filter><filter id="d" width="79.355" height="29.4" x="-35.435" y="2.801" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="e" width="79.579" height="29.4" x="-30.84" y="20.8" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="f" width="79.579" height="29.4" x="-29.307" y="21.949" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="g" width="74.749" height="58.852" x="29.961" y="-17.13" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="7.659"/></filter><filter id="h" width="61.377" height="25.362" x="37.754" y="3.055" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="i" width="61.377" height="25.362" x="37.754" y="3.055" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="j" width="56.045" height="63.649" x="-13.43" y="-22.082" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="k" width="54.814" height="64.646" x="34.321" y="-37.644" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="l" width="33.541" height="35.313" x="38.847" y="-10.552" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="m" width="54.814" height="64.646" x="-15.081" y="6.78" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="n" width="54.814" height="64.646" x="-15.081" y="6.78" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="o" width="54.814" height="64.646" x="22.45" y="-1.645" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="p" width="39.409" height="43.623" x="32.919" y="11.36" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter></defs></svg>
+</file>
+
+<file path="src/components/AnalysisResults.tsx">
+import type { AnalysisResult, ScenarioDefinition } from "../types";
+import { HoldingContributions } from "./HoldingContributions";
+
+interface AnalysisResultsProps {
+  result: AnalysisResult;
+  scenario: ScenarioDefinition;
+  onTryAnother: () => void;
+}
+
+const wholeDollarFormatter = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  maximumFractionDigits: 0,
+});
+
+const preciseCurrencyFormatter = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
+function formatSignedCurrency(
+  value: number,
+  includeCents = false,
+): string {
+  if (value === 0) {
+    return includeCents ? "$0.00" : "$0";
+  }
+
+  const formatter = includeCents
+    ? preciseCurrencyFormatter
+    : wholeDollarFormatter;
+
+  return `${value > 0 ? "+" : "−"}${formatter.format(Math.abs(value))}`;
+}
+
+function formatSignedPercent(value: number): string {
+  if (value === 0) {
+    return "0.00%";
+  }
+
+  return `${value > 0 ? "+" : "−"}${Math.abs(value).toFixed(2)}%`;
+}
+
+export function AnalysisResults({
+  result,
+  scenario,
+  onTryAnother,
+}: AnalysisResultsProps) {
+  const isPurchasingPower = result.kind === "purchasing-power";
+
+  return (
+    <section
+      id="analysis-results"
+      className="results-card"
+      aria-labelledby="results-title"
+      aria-live="polite"
+    >
+      <div className="results-header">
+        <div>
+          <p className="section-kicker">Illustrative result</p>
+          <h2 id="results-title">{result.label}</h2>
+          <p>{result.horizon}</p>
+        </div>
+        <span className="result-status">Analysis complete</span>
+      </div>
+
+      {isPurchasingPower ? (
+        <>
+          <div className="inflation-notice">
+            <strong>Purchasing-power illustration</strong>
+            <span>
+              This is not an asset-return forecast or an investment loss.
+            </span>
+          </div>
+
+          <div className="result-metrics result-metrics-inflation">
+            <div className="metric">
+              <span>Nominal portfolio value</span>
+              <strong>
+                {wholeDollarFormatter.format(result.nominalValue ?? 0)}
+              </strong>
+              <small>Nominal return held at 0%</small>
+            </div>
+
+            <div className="metric metric-emphasis">
+              <span>Purchasing power in today’s dollars</span>
+              <strong>
+                {preciseCurrencyFormatter.format(
+                  result.purchasingPowerValue ?? 0,
+                )}
+              </strong>
+              <small>After assumed 5% inflation</small>
+            </div>
+
+            <div className="metric">
+              <span>Purchasing-power change</span>
+              <strong className="number-negative">
+                {formatSignedCurrency(
+                  result.purchasingPowerChangeDollars ?? 0,
+                  true,
+                )}
+              </strong>
+              <small className="number-negative">
+                {formatSignedPercent(
+                  result.purchasingPowerChangePercent ?? 0,
+                )}
+              </small>
+            </div>
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="result-metrics">
+            <div className="metric">
+              <span>Current portfolio value</span>
+              <strong>
+                {wholeDollarFormatter.format(result.currentValue ?? 0)}
+              </strong>
+            </div>
+
+            <div className="metric metric-emphasis">
+              <span>Illustrative scenario value</span>
+              <strong>
+                {wholeDollarFormatter.format(result.scenarioValue ?? 0)}
+              </strong>
+            </div>
+
+            <div className="metric">
+              <span>Portfolio change</span>
+              <strong
+                className={
+                  (result.impactDollars ?? 0) < 0
+                    ? "number-negative"
+                    : "number-positive"
+                }
+              >
+                {formatSignedCurrency(result.impactDollars ?? 0)}
+              </strong>
+              <small>
+                {formatSignedPercent(result.impactPercent ?? 0)}
+              </small>
+            </div>
+          </div>
+
+          {result.holdings && (
+            <HoldingContributions holdings={result.holdings} />
+          )}
+        </>
+      )}
+
+      <section
+        className="explanation-card"
+        aria-labelledby="explanation-title"
+      >
+        <p className="section-kicker">In plain language</p>
+        <h3 id="explanation-title">Why does this affect me?</h3>
+        <p>{result.explanation}</p>
+        <span className="explanation-source">
+          Predefined educational explanation
+        </span>
+      </section>
+
+      <details className="assumptions-details">
+        <summary>Review assumptions and horizon</summary>
+        <div>
+          <p>
+            <strong>Horizon:</strong> {scenario.horizon}
+          </p>
+          <ul>
+            {scenario.assumptions.map((assumption) => (
+              <li key={assumption}>{assumption}</li>
+            ))}
+          </ul>
+          <p className="assumptions-version">
+            Assumptions version: {result.assumptionsVersion}
+          </p>
+        </div>
+      </details>
+
+      <div className="result-actions">
+        <button
+          className="secondary-button"
+          type="button"
+          onClick={onTryAnother}
+        >
+          Try another scenario
+        </button>
+        <button className="primary-button" type="button" disabled>
+          Discuss with my advisor
+        </button>
+      </div>
+
+      <p className="advisor-preview-note">
+        Advisor discussion requests will be enabled in the next milestone.
+      </p>
+    </section>
+  );
+}
+</file>
+
+<file path="src/components/HoldingContributions.tsx">
+import type { HoldingAnalysis } from "../types";
+
+interface HoldingContributionsProps {
+  holdings: HoldingAnalysis[];
+}
+
+const currencyFormatter = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  maximumFractionDigits: 0,
+});
+
+function formatSignedCurrency(value: number): string {
+  if (value === 0) {
+    return "$0";
+  }
+
+  const absoluteValue = currencyFormatter.format(Math.abs(value));
+  return `${value > 0 ? "+" : "−"}${absoluteValue}`;
+}
+
+function formatSignedPercent(value: number): string {
+  if (value === 0) {
+    return "0%";
+  }
+
+  return `${value > 0 ? "+" : "−"}${Math.abs(value).toFixed(0)}%`;
+}
+
+export function HoldingContributions({
+  holdings,
+}: HoldingContributionsProps) {
+  const largestContribution = Math.max(
+    ...holdings.map((holding) => Math.abs(holding.contributionDollars)),
+    1,
+  );
+
+  return (
+    <section
+      className="contribution-section"
+      aria-labelledby="contribution-title"
+    >
+      <div className="result-section-heading">
+        <div>
+          <p className="section-kicker">Holding attribution</p>
+          <h3 id="contribution-title">What drove the change?</h3>
+        </div>
+        <span className="zero-line-key">Center line = $0</span>
+      </div>
+
+      <div
+        className="contribution-chart"
+        role="img"
+        aria-label="Horizontal chart showing each holding's contribution to the portfolio change. Negative contributions extend left of zero and positive contributions extend right."
+      >
+        {holdings.map((holding) => {
+          const width =
+            (Math.abs(holding.contributionDollars) / largestContribution) * 48;
+
+          const isNegative = holding.contributionDollars < 0;
+          const isPositive = holding.contributionDollars > 0;
+
+          return (
+            <div className="contribution-row" key={holding.symbol}>
+              <div className="contribution-label">
+                <strong>{holding.symbol}</strong>
+                <span>{holding.name}</span>
+              </div>
+
+              <div className="contribution-track" aria-hidden="true">
+                <span className="chart-zero-line" />
+
+                {(isNegative || isPositive) && (
+                  <span
+                    className={`contribution-bar ${
+                      isNegative
+                        ? "contribution-bar-negative"
+                        : "contribution-bar-positive"
+                    }`}
+                    style={{
+                      width: `${width}%`,
+                      ...(isNegative
+                        ? { right: "50%" }
+                        : { left: "50%" }),
+                    }}
+                  />
+                )}
+
+                {!isNegative && !isPositive && (
+                  <span className="zero-marker" />
+                )}
+              </div>
+
+              <strong
+                className={
+                  holding.contributionDollars < 0
+                    ? "number-negative"
+                    : holding.contributionDollars > 0
+                      ? "number-positive"
+                      : ""
+                }
+              >
+                {formatSignedCurrency(holding.contributionDollars)}
+              </strong>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="table-scroll">
+        <table className="holding-table">
+          <caption>Holding-level scenario assumptions and contributions</caption>
+          <thead>
+            <tr>
+              <th scope="col">Holding</th>
+              <th scope="col">Starting value</th>
+              <th scope="col">Assumed return</th>
+              <th scope="col">Contribution</th>
+            </tr>
+          </thead>
+          <tbody>
+            {holdings.map((holding) => (
+              <tr key={holding.symbol}>
+                <th scope="row">
+                  <strong>{holding.symbol}</strong>
+                  <span>{holding.name}</span>
+                </th>
+                <td>{currencyFormatter.format(holding.startingValue)}</td>
+                <td>{formatSignedPercent(holding.assumedReturnPercent)}</td>
+                <td>
+                  <strong>
+                    {formatSignedCurrency(holding.contributionDollars)}
+                  </strong>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+</file>
+
+<file path="src/mocks/fixtures.ts">
+import type {
+  AnalysisResult,
+  Portfolio,
+  ScenarioDefinition,
+  ScenarioKey,
+} from "../types";
+
+export const portfolioFixture: Portfolio = {
+  id: "synthetic-portfolio-001",
+  name: "Synthetic portfolio",
+  totalValue: 100_000,
+  holdings: [
+    {
+      symbol: "SPY",
+      name: "US Equities",
+      value: 40_000,
+      allocation: 40,
+    },
+    {
+      symbol: "QQQ",
+      name: "Technology",
+      value: 15_000,
+      allocation: 15,
+    },
+    {
+      symbol: "XLE",
+      name: "Energy",
+      value: 15_000,
+      allocation: 15,
+    },
+    {
+      symbol: "TLT",
+      name: "US Treasuries",
+      value: 20_000,
+      allocation: 20,
+    },
+    {
+      symbol: "Cash",
+      name: "Cash",
+      value: 10_000,
+      allocation: 10,
+    },
+  ],
+};
+
+export const scenarioFixtures: ScenarioDefinition[] = [
+  {
+    key: "market_crash",
+    label: "S&P 500 falls 20%",
+    shortDescription:
+      "Explore an immediate broad-market decline and its effect across the portfolio.",
+    horizon: "Immediate shock",
+    assumptions: [
+      "SPY falls 20%",
+      "QQQ falls 26%",
+      "XLE falls 15%",
+      "TLT rises 6%",
+      "Cash remains unchanged",
+    ],
+    kind: "market",
+  },
+  {
+    key: "oil_shock",
+    label: "Oil reaches $150/barrel for one year",
+    shortDescription:
+      "Explore how a sharp oil-price increase could affect energy and other holdings.",
+    horizon: "One year",
+    assumptions: [
+      "SPY falls 6%",
+      "QQQ falls 10%",
+      "XLE rises 32%",
+      "TLT falls 4%",
+      "Cash remains unchanged",
+    ],
+    kind: "market",
+  },
+  {
+    key: "inflation",
+    label: "5% inflation for one year",
+    shortDescription:
+      "Illustrate how inflation can reduce purchasing power even when nominal value is unchanged.",
+    horizon: "One year",
+    assumptions: [
+      "Nominal portfolio return held at 0%",
+      "5% inflation over one year",
+      "Results expressed in today’s dollars",
+    ],
+    kind: "purchasing-power",
+  },
+];
+
+export const analysisFixtures: Record<ScenarioKey, AnalysisResult> = {
+  market_crash: {
+    analysisId: "mock-analysis-market-crash",
+    scenarioKey: "market_crash",
+    kind: "market",
+    label: "S&P 500 falls 20%",
+    horizon: "Immediate shock",
+    assumptionsVersion: "hackathon-fixture-v1",
+    currentValue: 100_000,
+    scenarioValue: 87_050,
+    impactDollars: -12_950,
+    impactPercent: -12.95,
+    holdings: [
+      {
+        symbol: "SPY",
+        name: "US Equities",
+        startingValue: 40_000,
+        assumedReturnPercent: -20,
+        contributionDollars: -8_000,
+      },
+      {
+        symbol: "QQQ",
+        name: "Technology",
+        startingValue: 15_000,
+        assumedReturnPercent: -26,
+        contributionDollars: -3_900,
+      },
+      {
+        symbol: "XLE",
+        name: "Energy",
+        startingValue: 15_000,
+        assumedReturnPercent: -15,
+        contributionDollars: -2_250,
+      },
+      {
+        symbol: "TLT",
+        name: "US Treasuries",
+        startingValue: 20_000,
+        assumedReturnPercent: 6,
+        contributionDollars: 1_200,
+      },
+      {
+        symbol: "Cash",
+        name: "Cash",
+        startingValue: 10_000,
+        assumedReturnPercent: 0,
+        contributionDollars: 0,
+      },
+    ],
+    explanation:
+      "The largest effect comes from the portfolio’s equity exposure. SPY and QQQ account for most of the decline because they represent 55% of the starting portfolio and are assumed to fall sharply. The gain in US Treasuries provides a partial offset, while cash remains unchanged.",
+    explanationSource: "predefined",
+  },
+
+  oil_shock: {
+    analysisId: "mock-analysis-oil-shock",
+    scenarioKey: "oil_shock",
+    kind: "market",
+    label: "Oil reaches $150/barrel for one year",
+    horizon: "One year",
+    assumptionsVersion: "hackathon-fixture-v1",
+    currentValue: 100_000,
+    scenarioValue: 100_100,
+    impactDollars: 100,
+    impactPercent: 0.1,
+    holdings: [
+      {
+        symbol: "SPY",
+        name: "US Equities",
+        startingValue: 40_000,
+        assumedReturnPercent: -6,
+        contributionDollars: -2_400,
+      },
+      {
+        symbol: "QQQ",
+        name: "Technology",
+        startingValue: 15_000,
+        assumedReturnPercent: -10,
+        contributionDollars: -1_500,
+      },
+      {
+        symbol: "XLE",
+        name: "Energy",
+        startingValue: 15_000,
+        assumedReturnPercent: 32,
+        contributionDollars: 4_800,
+      },
+      {
+        symbol: "TLT",
+        name: "US Treasuries",
+        startingValue: 20_000,
+        assumedReturnPercent: -4,
+        contributionDollars: -800,
+      },
+      {
+        symbol: "Cash",
+        name: "Cash",
+        startingValue: 10_000,
+        assumedReturnPercent: 0,
+        contributionDollars: 0,
+      },
+    ],
+    explanation:
+      "The assumed gain in the energy holding nearly offsets losses elsewhere. XLE contributes +$4,800, while SPY, QQQ, and TLT together contribute −$4,700. The resulting illustrative portfolio change is a small gain of +$100, or +0.10%.",
+    explanationSource: "predefined",
+  },
+
+  inflation: {
+    analysisId: "mock-analysis-inflation",
+    scenarioKey: "inflation",
+    kind: "purchasing-power",
+    label: "5% inflation for one year",
+    horizon: "One year",
+    assumptionsVersion: "hackathon-fixture-v1",
+    nominalValue: 100_000,
+    nominalReturnPercent: 0,
+    purchasingPowerValue: 95_238.1,
+    purchasingPowerChangeDollars: -4_761.9,
+    purchasingPowerChangePercent: -4.76,
+    explanation:
+      "The portfolio’s nominal value is held at $100,000 in this illustration. With prices assumed to rise 5%, that same amount would purchase approximately what $95,238.10 purchases today. This is a purchasing-power illustration, not an investment loss or an asset-return forecast.",
+    explanationSource: "predefined",
+  },
+};
+</file>
+
+<file path="src/api.ts">
+import { analysisFixtures, portfolioFixture } from "./mocks/fixtures";
+import type { AnalysisResult, Portfolio, ScenarioKey } from "./types";
+
+export type ApiMode = "mock" | "real";
+
+export const API_MODE: ApiMode =
+  import.meta.env.VITE_API_MODE === "real" ? "real" : "mock";
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
+
+function wait(milliseconds: number, signal?: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const timeoutId = window.setTimeout(resolve, milliseconds);
+
+    signal?.addEventListener(
+      "abort",
+      () => {
+        window.clearTimeout(timeoutId);
+        reject(new DOMException("Request was cancelled.", "AbortError"));
+      },
+      { once: true },
+    );
+  });
+}
+
+async function parseResponse<T>(response: Response): Promise<T> {
+  if (!response.ok) {
+    let message = `Request failed with status ${response.status}.`;
+
+    try {
+      const body = (await response.json()) as {
+        detail?: string;
+        message?: string;
+      };
+
+      message = body.detail ?? body.message ?? message;
+    } catch {
+      // Keep the status-based message when the body is not JSON.
+    }
+
+    throw new Error(message);
+  }
+
+  return (await response.json()) as T;
+}
+
+export async function getPortfolio(
+  signal?: AbortSignal,
+): Promise<Portfolio> {
+  if (API_MODE === "mock") {
+    await wait(250, signal);
+    return structuredClone(portfolioFixture);
+  }
+
+  const response = await fetch(`${API_BASE_URL}/api/portfolio`, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+    },
+    signal,
+  });
+
+  return parseResponse<Portfolio>(response);
+}
+
+export async function analyzeScenario(
+  scenarioKey: ScenarioKey,
+  signal?: AbortSignal,
+): Promise<AnalysisResult> {
+  if (API_MODE === "mock") {
+    await wait(650, signal);
+    return structuredClone(analysisFixtures[scenarioKey]);
+  }
+
+  // This request body is provisional because no API contract was found.
+  const response = await fetch(`${API_BASE_URL}/api/analyze`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      scenario_key: scenarioKey,
+    }),
+    signal,
+  });
+
+  return parseResponse<AnalysisResult>(response);
+}
+</file>
+
+<file path="src/App.css">
+#root {
+  min-height: 100vh;
+}
+
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.site-header {
+  min-height: 76px;
+  padding: 0 5vw;
+  border-bottom: 1px solid var(--color-border);
+  background: rgba(248, 246, 240, 0.96);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.brand {
+  color: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+}
+
+.brand-mark {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--color-navy);
+  color: var(--color-white);
+  display: grid;
+  place-items: center;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+
+.brand-name,
+.brand-subtitle {
+  display: block;
+}
+
+.brand-name {
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+}
+
+.brand-subtitle {
+  margin-top: 2px;
+  color: var(--color-muted);
+  font-size: 0.75rem;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.demo-label {
+  color: var(--color-muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.view-switch {
+  min-height: 40px;
+  padding: 7px 12px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 9px;
+  background: transparent;
+  color: var(--color-muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.coming-soon {
+  border-radius: 999px;
+  background: var(--color-surface-strong);
+  padding: 3px 7px;
+  font-size: 0.65rem;
+  letter-spacing: 0.02em;
+}
+
+.main-content {
+  width: min(1180px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 72px 0 36px;
+  flex: 1;
+}
+
+.intro-section {
+  max-width: 820px;
+  margin-bottom: 44px;
+}
+
+.eyebrow,
+.section-kicker {
+  margin: 0 0 9px;
+  color: var(--color-teal-dark);
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.intro-section h1 {
+  max-width: 800px;
+  margin: 0;
+  color: var(--color-navy);
+  font-size: clamp(2.25rem, 5vw, 4.4rem);
+  line-height: 1.02;
+  letter-spacing: -0.055em;
+}
+
+.intro-copy {
+  max-width: 650px;
+  margin: 22px 0 0;
+  color: var(--color-muted);
+  font-size: 1.08rem;
+  line-height: 1.7;
+}
+
+.workspace-grid {
+  display: grid;
+  grid-template-columns: minmax(290px, 0.78fr) minmax(0, 1.55fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.portfolio-card,
+.scenario-panel {
+  border: 1px solid var(--color-border);
+  border-radius: 18px;
+  background: var(--color-white);
+  box-shadow: 0 16px 45px rgba(17, 35, 48, 0.06);
+}
+
+.portfolio-card {
+  padding: 26px;
+}
+
+.scenario-panel {
+  padding: 32px;
+}
+
+.card-heading,
+.confirmation-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.card-heading h2,
+.panel-heading h2,
+.confirmation-heading h3 {
+  margin: 0;
+  color: var(--color-navy);
+  letter-spacing: -0.025em;
+}
+
+.card-heading h2 {
+  font-size: 1.25rem;
+}
+
+.portfolio-badge {
+  border: 1px solid #bddbd5;
+  border-radius: 999px;
+  background: var(--color-teal-soft);
+  color: var(--color-teal-dark);
+  padding: 5px 9px;
+  font-size: 0.67rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.portfolio-total {
+  margin-top: 27px;
+}
+
+.portfolio-total span,
+.portfolio-total strong {
+  display: block;
+}
+
+.portfolio-total span {
+  margin-bottom: 4px;
+  color: var(--color-muted);
+  font-size: 0.79rem;
+}
+
+.portfolio-total strong {
+  font-size: 2.15rem;
+  letter-spacing: -0.045em;
+}
+
+.allocation-bar {
+  height: 8px;
+  margin: 21px 0 13px;
+  border-radius: 999px;
+  display: flex;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.allocation-bar span {
+  display: block;
+}
+
+.allocation-spy,
+.holding-dot-spy {
+  background: #166b67;
+}
+
+.allocation-qqq,
+.holding-dot-qqq {
+  background: #318f87;
+}
+
+.allocation-xle,
+.holding-dot-xle {
+  background: #9c7440;
+}
+
+.allocation-tlt,
+.holding-dot-tlt {
+  background: #6c7d96;
+}
+
+.allocation-cash,
+.holding-dot-cash {
+  background: #aeb5b5;
+}
+
+.holdings-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.holding-row {
+  min-height: 62px;
+  border-bottom: 1px solid var(--color-border-soft);
+  display: grid;
+  grid-template-columns: 9px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.holding-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.holding-identity strong,
+.holding-identity span,
+.holding-value strong,
+.holding-value span {
+  display: block;
+}
+
+.holding-identity strong,
+.holding-value strong {
+  font-size: 0.88rem;
+}
+
+.holding-identity span,
+.holding-value span {
+  margin-top: 3px;
+  color: var(--color-muted);
+  font-size: 0.74rem;
+}
+
+.holding-value {
+  text-align: right;
+}
+
+.portfolio-note {
+  margin: 20px 0 0;
+  color: var(--color-muted);
+  font-size: 0.74rem;
+  line-height: 1.55;
+}
+
+.panel-heading h2 {
+  font-size: clamp(1.55rem, 3vw, 2.1rem);
+}
+
+.panel-heading > p:last-child {
+  margin: 9px 0 0;
+  color: var(--color-muted);
+  line-height: 1.55;
+}
+
+.question-form {
+  margin-top: 28px;
+}
+
+.question-form label {
+  display: block;
+  margin-bottom: 9px;
+  color: var(--color-navy);
+  font-size: 0.86rem;
+  font-weight: 750;
+}
+
+.question-field-row {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.question-field-row textarea {
+  width: 100%;
+  min-height: 74px;
+  padding: 14px 15px;
+  resize: vertical;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 10px;
+  background: var(--color-white);
+  color: var(--color-navy);
+  font: inherit;
+  font-size: 0.93rem;
+  line-height: 1.45;
+}
+
+.question-field-row textarea::placeholder {
+  color: #79858c;
+}
+
+.primary-button,
+.secondary-button,
+.text-button,
+.scenario-option {
+  font: inherit;
+}
+
+.primary-button,
+.secondary-button {
+  min-height: 46px;
+  border-radius: 9px;
+  padding: 0 18px;
+  font-size: 0.86rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.primary-button {
+  border: 1px solid var(--color-navy);
+  background: var(--color-navy);
+  color: var(--color-white);
+}
+
+.primary-button:hover {
+  background: #1b394c;
+}
+
+.secondary-button {
+  flex: 0 0 auto;
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-surface);
+  color: var(--color-navy);
+}
+
+.secondary-button:hover {
+  border-color: var(--color-teal);
+  background: var(--color-teal-soft);
+}
+
+.field-message {
+  margin: 9px 0 0;
+  color: var(--color-muted);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.divider {
+  margin: 25px 0 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--color-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.divider::before,
+.divider::after {
+  height: 1px;
+  background: var(--color-border);
+  content: "";
+  flex: 1;
+}
+
+.scenario-options {
+  display: grid;
+  gap: 10px;
+}
+
+.scenario-option {
+  width: 100%;
+  padding: 16px 17px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-white);
+  color: var(--color-navy);
+  cursor: pointer;
+  text-align: left;
+}
+
+.scenario-option:hover {
+  border-color: #86aaa6;
+  background: #fbfcfa;
+}
+
+.scenario-option-selected {
+  border-color: var(--color-teal);
+  background: var(--color-teal-soft);
+  box-shadow: inset 0 0 0 1px var(--color-teal);
+}
+
+.scenario-option-topline {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.scenario-option-topline strong {
+  font-size: 0.94rem;
+}
+
+.selection-indicator {
+  width: 21px;
+  height: 21px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 50%;
+  color: var(--color-white);
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.scenario-option-selected .selection-indicator {
+  border-color: var(--color-teal);
+  background: var(--color-teal);
+}
+
+.scenario-description,
+.scenario-horizon {
+  display: block;
+}
+
+.scenario-description {
+  max-width: 570px;
+  margin-top: 7px;
+  color: var(--color-muted);
+  font-size: 0.79rem;
+  line-height: 1.5;
+}
+
+.scenario-horizon {
+  margin-top: 9px;
+  color: var(--color-teal-dark);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.confirmation-card {
+  margin-top: 20px;
+  padding: 22px;
+  border: 1px solid #cbd8d5;
+  border-radius: 14px;
+  background: #f7faf8;
+}
+
+.confirmation-heading h3 {
+  font-size: 1.15rem;
+}
+
+.text-button {
+  border: 0;
+  background: transparent;
+  color: var(--color-teal-dark);
+  padding: 5px;
+  font-size: 0.79rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.text-button:hover {
+  text-decoration: underline;
+}
+
+.confirmed-scenario {
+  margin-top: 19px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #dbe4e1;
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.confirmed-scenario strong {
+  font-size: 0.9rem;
+}
+
+.confirmed-scenario span {
+  color: var(--color-muted);
+  font-size: 0.79rem;
+  white-space: nowrap;
+}
+
+.context-note {
+  margin: 15px 0 0;
+  border-left: 3px solid var(--color-teal);
+  padding: 9px 12px;
+  background: var(--color-teal-soft);
+  color: var(--color-navy);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.assumption-list {
+  margin: 16px 0 20px;
+  padding-left: 20px;
+  color: var(--color-muted);
+  columns: 2;
+  column-gap: 28px;
+  font-size: 0.79rem;
+  line-height: 1.7;
+}
+
+.assumption-list li::marker {
+  color: var(--color-teal);
+}
+
+.empty-confirmation {
+  min-height: 76px;
+  margin-top: 20px;
+  border: 1px dashed var(--color-border-strong);
+  border-radius: 12px;
+  color: var(--color-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px;
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+.empty-confirmation span {
+  color: var(--color-teal);
+  font-weight: 900;
+}
+
+.disclosure {
+  margin: 24px auto 0;
+  color: var(--color-muted);
+  font-size: 0.76rem;
+  line-height: 1.55;
+  text-align: center;
+}
+
+.site-footer {
+  width: min(1180px, calc(100% - 40px));
+  margin: 10px auto 0;
+  padding: 24px 0 28px;
+  border-top: 1px solid var(--color-border);
+  color: var(--color-muted);
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  font-size: 0.72rem;
+}
+
+button:focus-visible,
+textarea:focus-visible,
+a:focus-visible {
+  outline: 3px solid rgba(26, 121, 114, 0.28);
+  outline-offset: 3px;
+}
+
+@media (max-width: 900px) {
+  .main-content {
+    padding-top: 48px;
+  }
+
+  .workspace-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .portfolio-card {
+    order: 1;
+  }
+
+  .scenario-panel {
+    order: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .site-header {
+    min-height: 68px;
+    padding: 10px 20px;
+  }
+
+  .demo-label,
+  .coming-soon,
+  .brand-subtitle {
+    display: none;
+  }
+
+  .view-switch {
+    padding: 6px 9px;
+  }
+
+  .main-content {
+    width: min(100% - 28px, 1180px);
+    padding-top: 36px;
+  }
+
+  .intro-section {
+    margin-bottom: 30px;
+  }
+
+  .intro-section h1 {
+    font-size: 2.45rem;
+  }
+
+  .scenario-panel,
+  .portfolio-card {
+    padding: 21px;
+    border-radius: 14px;
+  }
+
+  .question-field-row {
+    flex-direction: column;
+  }
+
+  .secondary-button {
+    width: 100%;
+  }
+
+  .assumption-list {
+    columns: 1;
+  }
+
+  .confirmed-scenario {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .site-footer {
+    width: min(100% - 28px, 1180px);
+    flex-direction: column;
+    gap: 6px;
+  }
+}
+.mock-mode-label {
+  border: 1px solid #bddbd5;
+  border-radius: 999px;
+  background: var(--color-teal-soft);
+  color: var(--color-teal-dark);
+  padding: 5px 9px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.results-card {
+  margin-top: 28px;
+  padding: 34px;
+  border: 1px solid var(--color-border);
+  border-radius: 18px;
+  background: var(--color-white);
+  box-shadow: 0 16px 45px rgba(17, 35, 48, 0.06);
+  scroll-margin-top: 24px;
+}
+
+.results-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.results-header h2 {
+  margin: 0;
+  color: var(--color-navy);
+  font-size: clamp(1.65rem, 3vw, 2.35rem);
+  letter-spacing: -0.035em;
+}
+
+.results-header p:last-child {
+  margin: 8px 0 0;
+  color: var(--color-muted);
+  font-size: 0.88rem;
+}
+
+.result-status {
+  border: 1px solid #bddbd5;
+  border-radius: 999px;
+  background: var(--color-teal-soft);
+  color: var(--color-teal-dark);
+  padding: 7px 11px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.result-metrics {
+  margin-top: 28px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.metric {
+  min-height: 132px;
+  padding: 20px;
+  border: 1px solid var(--color-border);
+  border-radius: 13px;
+  background: var(--color-surface);
+}
+
+.metric-emphasis {
+  border-color: #a9cbc5;
+  background: var(--color-teal-soft);
+}
+
+.metric span,
+.metric strong,
+.metric small {
+  display: block;
+}
+
+.metric span {
+  color: var(--color-muted);
+  font-size: 0.76rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.metric strong {
+  margin-top: 12px;
+  color: var(--color-navy);
+  font-size: clamp(1.55rem, 3vw, 2.05rem);
+  letter-spacing: -0.04em;
+}
+
+.metric small {
+  margin-top: 8px;
+  color: var(--color-muted);
+  font-size: 0.78rem;
+  font-weight: 750;
+}
+
+.number-negative {
+  color: #8c3f38 !important;
+}
+
+.number-positive {
+  color: var(--color-teal-dark) !important;
+}
+
+.inflation-notice {
+  margin-top: 24px;
+  border-left: 4px solid var(--color-teal);
+  border-radius: 0 10px 10px 0;
+  background: var(--color-teal-soft);
+  padding: 14px 17px;
+}
+
+.inflation-notice strong,
+.inflation-notice span {
+  display: block;
+}
+
+.inflation-notice strong {
+  font-size: 0.86rem;
+}
+
+.inflation-notice span {
+  margin-top: 4px;
+  color: var(--color-muted);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.contribution-section {
+  margin-top: 36px;
+  padding-top: 32px;
+  border-top: 1px solid var(--color-border);
+}
+
+.result-section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.result-section-heading h3,
+.explanation-card h3 {
+  margin: 0;
+  color: var(--color-navy);
+  font-size: 1.3rem;
+  letter-spacing: -0.025em;
+}
+
+.zero-line-key {
+  color: var(--color-muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.contribution-chart {
+  margin-top: 23px;
+  display: grid;
+  gap: 15px;
+}
+
+.contribution-row {
+  display: grid;
+  grid-template-columns: 130px minmax(160px, 1fr) 90px;
+  align-items: center;
+  gap: 14px;
+}
+
+.contribution-label strong,
+.contribution-label span {
+  display: block;
+}
+
+.contribution-label strong {
+  font-size: 0.83rem;
+}
+
+.contribution-label span {
+  margin-top: 3px;
+  color: var(--color-muted);
+  font-size: 0.7rem;
+}
+
+.contribution-row > strong {
+  font-size: 0.79rem;
+  text-align: right;
+}
+
+.contribution-track {
+  position: relative;
+  height: 24px;
+  border-radius: 5px;
+  background: #f2f1ec;
+  overflow: hidden;
+}
+
+.chart-zero-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  z-index: 2;
+  width: 2px;
+  background: #68767c;
+  transform: translateX(-1px);
+}
+
+.contribution-bar {
+  position: absolute;
+  top: 5px;
+  bottom: 5px;
+  min-width: 3px;
+}
+
+.contribution-bar-negative {
+  border-radius: 4px 0 0 4px;
+  background: #a95a50;
+}
+
+.contribution-bar-positive {
+  border-radius: 0 4px 4px 0;
+  background: var(--color-teal);
+}
+
+.zero-marker {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  z-index: 3;
+  width: 8px;
+  height: 8px;
+  border: 2px solid #68767c;
+  border-radius: 50%;
+  background: var(--color-white);
+  transform: translateX(-4px);
+}
+
+.table-scroll {
+  margin-top: 28px;
+  overflow-x: auto;
+}
+
+.holding-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.79rem;
+}
+
+.holding-table caption {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.holding-table th,
+.holding-table td {
+  padding: 13px 12px;
+  border-bottom: 1px solid var(--color-border-soft);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.holding-table thead th {
+  color: var(--color-muted);
+  font-size: 0.7rem;
+  letter-spacing: 0.035em;
+  text-transform: uppercase;
+}
+
+.holding-table th:first-child,
+.holding-table td:first-child {
+  padding-left: 0;
+  text-align: left;
+}
+
+.holding-table th:last-child,
+.holding-table td:last-child {
+  padding-right: 0;
+}
+
+.holding-table tbody th strong,
+.holding-table tbody th span {
+  display: block;
+}
+
+.holding-table tbody th span {
+  margin-top: 3px;
+  color: var(--color-muted);
+  font-size: 0.7rem;
+  font-weight: 400;
+}
+
+.explanation-card {
+  margin-top: 34px;
+  padding: 24px;
+  border-radius: 14px;
+  background: #f3f6f4;
+}
+
+.explanation-card > p:not(.section-kicker) {
+  max-width: 850px;
+  margin: 13px 0 0;
+  color: var(--color-muted);
+  font-size: 0.9rem;
+  line-height: 1.7;
+}
+
+.explanation-source {
+  display: inline-block;
+  margin-top: 16px;
+  color: var(--color-muted);
+  font-size: 0.69rem;
+  font-weight: 700;
+}
+
+.assumptions-details {
+  margin-top: 18px;
+  border: 1px solid var(--color-border);
+  border-radius: 11px;
+  background: var(--color-white);
+}
+
+.assumptions-details summary {
+  padding: 15px 17px;
+  color: var(--color-navy);
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.assumptions-details summary:focus-visible {
+  outline: 3px solid rgba(26, 121, 114, 0.28);
+  outline-offset: 3px;
+}
+
+.assumptions-details > div {
+  padding: 0 17px 17px;
+  color: var(--color-muted);
+  font-size: 0.79rem;
+  line-height: 1.65;
+}
+
+.assumptions-details ul {
+  margin: 10px 0;
+  padding-left: 21px;
+}
+
+.assumptions-details li::marker {
+  color: var(--color-teal);
+}
+
+.assumptions-version {
+  margin-bottom: 0;
+  font-size: 0.7rem;
+}
+
+.result-actions {
+  margin-top: 24px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.advisor-preview-note {
+  margin: 9px 0 0;
+  color: var(--color-muted);
+  font-size: 0.7rem;
+  text-align: right;
+}
+
+.error-message {
+  margin-top: 16px;
+  border: 1px solid #e0b8b3;
+  border-radius: 10px;
+  background: #fff5f3;
+  padding: 14px;
+  color: #753730;
+}
+
+.error-message strong,
+.error-message span {
+  display: block;
+}
+
+.error-message strong {
+  font-size: 0.82rem;
+}
+
+.error-message span {
+  margin-top: 5px;
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+
+.error-message .text-button {
+  margin-top: 7px;
+  padding-left: 0;
+  color: #753730;
+}
+
+@media (max-width: 760px) {
+  .results-card {
+    padding: 22px;
+  }
+
+  .results-header {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .result-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .metric {
+    min-height: auto;
+  }
+
+  .contribution-row {
+    grid-template-columns: 85px minmax(120px, 1fr) 76px;
+    gap: 8px;
+  }
+
+  .result-actions {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+
+  .result-actions button {
+    width: 100%;
+  }
+
+  .advisor-preview-note {
+    text-align: center;
+  }
+}
+
+@media (max-width: 500px) {
+  .mock-mode-label {
+    display: none;
+  }
+
+  .contribution-row {
+    grid-template-columns: 62px minmax(100px, 1fr) 68px;
+  }
+
+  .contribution-label span {
+    display: none;
+  }
+
+  .contribution-row > strong {
+    font-size: 0.7rem;
+  }
+
+  .result-section-heading {
+    flex-direction: column;
+    gap: 5px;
+  }
+}
+</file>
+
+<file path="src/App.tsx">
+import {
+  useRef,
+  useState,
+  type FormEvent,
+} from "react";
+import "./App.css";
+import { analyzeScenario, API_MODE } from "./api";
+import { AnalysisResults } from "./components/AnalysisResults";
+import {
+  portfolioFixture,
+  scenarioFixtures,
+} from "./mocks/fixtures";
+import type {
+  AnalysisResult,
+  ScenarioKey,
+} from "./types";
+
+const currencyFormatter = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  maximumFractionDigits: 0,
+});
+
+function App() {
+  const [selectedScenarioKey, setSelectedScenarioKey] =
+    useState<ScenarioKey | null>(null);
+  const [question, setQuestion] = useState("");
+  const [questionStatus, setQuestionStatus] = useState("");
+  const [analysis, setAnalysis] =
+    useState<AnalysisResult | null>(null);
+  const [analysisError, setAnalysisError] = useState("");
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  const requestIdRef = useRef(0);
+
+  const selectedScenario =
+    scenarioFixtures.find(
+      (scenario) => scenario.key === selectedScenarioKey,
+    ) ?? null;
+
+  function selectScenario(scenarioKey: ScenarioKey) {
+    requestIdRef.current += 1;
+    setSelectedScenarioKey(scenarioKey);
+    setAnalysis(null);
+    setAnalysisError("");
+    setQuestionStatus("");
+    setIsAnalyzing(false);
+  }
+
+  function handleQuestionSubmit(
+    event: FormEvent<HTMLFormElement>,
+  ) {
+    event.preventDefault();
+
+    if (!question.trim()) {
+      setQuestionStatus(
+        "Enter a market question or choose a supported scenario.",
+      );
+      return;
+    }
+
+    setQuestionStatus(
+      "Typed-question interpretation is not connected in this frontend milestone. Choose one of the exact supported scenarios below; your question has not been reinterpreted.",
+    );
+  }
+
+  async function handleAnalyze() {
+    if (!selectedScenarioKey) {
+      return;
+    }
+
+    const requestId = requestIdRef.current + 1;
+    requestIdRef.current = requestId;
+
+    setIsAnalyzing(true);
+    setAnalysis(null);
+    setAnalysisError("");
+
+    try {
+      const result = await analyzeScenario(selectedScenarioKey);
+
+      if (requestId !== requestIdRef.current) {
+        return;
+      }
+
+      setAnalysis(result);
+
+      window.setTimeout(() => {
+        document
+          .getElementById("analysis-results")
+          ?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+      }, 0);
+    } catch (error) {
+      if (requestId !== requestIdRef.current) {
+        return;
+      }
+
+      setAnalysisError(
+        error instanceof Error
+          ? error.message
+          : "The analysis could not be completed.",
+      );
+    } finally {
+      if (requestId === requestIdRef.current) {
+        setIsAnalyzing(false);
+      }
+    }
+  }
+
+  function handleTryAnother() {
+    requestIdRef.current += 1;
+    setSelectedScenarioKey(null);
+    setAnalysis(null);
+    setAnalysisError("");
+    setQuestion("");
+    setQuestionStatus("");
+
+    document
+      .getElementById("scenario-panel-title")
+      ?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+  }
+
+  return (
+    <div className="app-shell">
+      <header className="site-header">
+        <a
+          className="brand"
+          href="#main-content"
+          aria-label="ScenarioCraft home"
+        >
+          <span className="brand-mark" aria-hidden="true">
+            SC
+          </span>
+          <span>
+            <span className="brand-name">ScenarioCraft</span>
+            <span className="brand-subtitle">Investor demo</span>
+          </span>
+        </a>
+
+        <div className="header-actions">
+          {API_MODE === "mock" && (
+            <span className="mock-mode-label">Demo data</span>
+          )}
+          <span className="demo-label">
+            Educational prototype
+          </span>
+          <button
+            className="view-switch"
+            type="button"
+            disabled
+          >
+            Advisor view
+            <span className="coming-soon">Coming soon</span>
+          </button>
+        </div>
+      </header>
+
+      <main id="main-content" className="main-content">
+        <section
+          className="intro-section"
+          aria-labelledby="page-title"
+        >
+          <p className="eyebrow">
+            Portfolio scenario explorer
+          </p>
+          <h1 id="page-title">
+            Ask “What if?” Understand what it means for your
+            portfolio.
+          </h1>
+          <p className="intro-copy">
+            Explore predefined market conditions and see their
+            illustrative effect on a synthetic portfolio.
+          </p>
+        </section>
+
+        <div className="workspace-grid">
+          <aside
+            className="portfolio-card"
+            aria-labelledby="portfolio-title"
+          >
+            <div className="card-heading">
+              <div>
+                <p className="section-kicker">
+                  Synthetic portfolio
+                </p>
+                <h2 id="portfolio-title">
+                  Your starting point
+                </h2>
+              </div>
+              <span className="portfolio-badge">Demo</span>
+            </div>
+
+            <div className="portfolio-total">
+              <span>Current value</span>
+              <strong>
+                {currencyFormatter.format(
+                  portfolioFixture.totalValue,
+                )}
+              </strong>
+            </div>
+
+            <div className="allocation-bar" aria-hidden="true">
+              <span
+                className="allocation-spy"
+                style={{ width: "40%" }}
+              />
+              <span
+                className="allocation-qqq"
+                style={{ width: "15%" }}
+              />
+              <span
+                className="allocation-xle"
+                style={{ width: "15%" }}
+              />
+              <span
+                className="allocation-tlt"
+                style={{ width: "20%" }}
+              />
+              <span
+                className="allocation-cash"
+                style={{ width: "10%" }}
+              />
+            </div>
+
+            <ul className="holdings-list">
+              {portfolioFixture.holdings.map((holding) => (
+                <li
+                  key={holding.symbol}
+                  className="holding-row"
+                >
+                  <span
+                    className={`holding-dot holding-dot-${holding.symbol.toLowerCase()}`}
+                    aria-hidden="true"
+                  />
+                  <span className="holding-identity">
+                    <strong>{holding.symbol}</strong>
+                    <span>{holding.name}</span>
+                  </span>
+                  <span className="holding-value">
+                    <strong>
+                      {currencyFormatter.format(holding.value)}
+                    </strong>
+                    <span>{holding.allocation}%</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+
+            <p className="portfolio-note">
+              This fictional portfolio is used consistently
+              across all ScenarioCraft demonstrations.
+            </p>
+          </aside>
+
+          <section
+            className="scenario-panel"
+            aria-labelledby="scenario-panel-title"
+          >
+            <div className="panel-heading">
+              <p className="section-kicker">Step 1 of 2</p>
+              <h2 id="scenario-panel-title">
+                Explore a market scenario
+              </h2>
+              <p>
+                Choose a supported scenario or enter a question
+                for interpretation.
+              </p>
+            </div>
+
+            <form
+              className="question-form"
+              onSubmit={handleQuestionSubmit}
+            >
+              <label htmlFor="scenario-question">
+                What market change are you considering?
+              </label>
+
+              <div className="question-field-row">
+                <textarea
+                  id="scenario-question"
+                  value={question}
+                  onChange={(event) => {
+                    setQuestion(event.target.value);
+                    setQuestionStatus("");
+                  }}
+                  placeholder="For example: What if the S&P 500 falls 20%?"
+                  rows={2}
+                />
+                <button
+                  className="secondary-button"
+                  type="submit"
+                >
+                  Interpret question
+                </button>
+              </div>
+
+              {questionStatus && (
+                <p className="field-message" role="status">
+                  {questionStatus}
+                </p>
+              )}
+            </form>
+
+            <div className="divider">
+              <span>or choose a supported scenario</span>
+            </div>
+
+            <div className="scenario-options">
+              {scenarioFixtures.map((scenario) => {
+                const isSelected =
+                  selectedScenarioKey === scenario.key;
+
+                return (
+                  <button
+                    className={`scenario-option ${
+                      isSelected
+                        ? "scenario-option-selected"
+                        : ""
+                    }`}
+                    type="button"
+                    key={scenario.key}
+                    aria-pressed={isSelected}
+                    onClick={() =>
+                      selectScenario(scenario.key)
+                    }
+                  >
+                    <span className="scenario-option-topline">
+                      <strong>{scenario.label}</strong>
+                      <span
+                        className="selection-indicator"
+                        aria-hidden="true"
+                      >
+                        {isSelected ? "✓" : ""}
+                      </span>
+                    </span>
+
+                    <span className="scenario-description">
+                      {scenario.shortDescription}
+                    </span>
+
+                    <span className="scenario-horizon">
+                      Horizon: {scenario.horizon}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {selectedScenario ? (
+              <section
+                className="confirmation-card"
+                aria-labelledby="confirmation-title"
+              >
+                <div className="confirmation-heading">
+                  <div>
+                    <p className="section-kicker">
+                      Step 2 of 2
+                    </p>
+                    <h3 id="confirmation-title">
+                      Confirm the assumptions
+                    </h3>
+                  </div>
+
+                  <button
+                    className="text-button"
+                    type="button"
+                    onClick={() => {
+                      requestIdRef.current += 1;
+                      setSelectedScenarioKey(null);
+                      setAnalysis(null);
+                      setAnalysisError("");
+                    }}
+                  >
+                    Clear
+                  </button>
+                </div>
+
+                <div className="confirmed-scenario">
+                  <strong>{selectedScenario.label}</strong>
+                  <span>{selectedScenario.horizon}</span>
+                </div>
+
+                {selectedScenario.kind ===
+                  "purchasing-power" && (
+                  <p className="context-note">
+                    This is a purchasing-power illustration,
+                    not an asset-return forecast.
+                  </p>
+                )}
+
+                <ul className="assumption-list">
+                  {selectedScenario.assumptions.map(
+                    (assumption) => (
+                      <li key={assumption}>{assumption}</li>
+                    ),
+                  )}
+                </ul>
+
+                <button
+                  className="primary-button"
+                  type="button"
+                  onClick={handleAnalyze}
+                  disabled={isAnalyzing}
+                >
+                  {isAnalyzing
+                    ? "Analyzing scenario…"
+                    : "Analyze this scenario"}
+                </button>
+
+                {analysisError && (
+                  <div className="error-message" role="alert">
+                    <strong>Analysis unavailable</strong>
+                    <span>{analysisError}</span>
+                    <button
+                      className="text-button"
+                      type="button"
+                      onClick={handleAnalyze}
+                    >
+                      Try again
+                    </button>
+                  </div>
+                )}
+              </section>
+            ) : (
+              <div className="empty-confirmation">
+                <span aria-hidden="true">↑</span>
+                Select a scenario to review its exact assumptions
+                before analysis.
+              </div>
+            )}
+          </section>
+        </div>
+
+        {analysis && selectedScenario && (
+          <AnalysisResults
+            result={analysis}
+            scenario={selectedScenario}
+            onTryAnother={handleTryAnother}
+          />
+        )}
+
+        <p className="disclosure">
+          Illustrative scenario analysis based on predefined
+          assumptions. This is not a forecast or investment
+          recommendation.
+        </p>
+      </main>
+
+      <footer className="site-footer">
+        <span>ScenarioCraft</span>
+        <span>
+          University hackathon educational prototype
+        </span>
+      </footer>
+    </div>
+  );
+}
+
+export default App;
+</file>
+
+<file path="src/index.css">
+:root {
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  color: #132b3a;
+  background: #f8f6f0;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+
+  --color-navy: #132b3a;
+  --color-muted: #586871;
+  --color-teal: #1a7972;
+  --color-teal-dark: #12615c;
+  --color-teal-soft: #eaf5f2;
+  --color-white: #fffefb;
+  --color-surface: #f7f5ef;
+  --color-surface-strong: #eceae3;
+  --color-border: #dcded9;
+  --color-border-soft: #e8e9e4;
+  --color-border-strong: #b9c1bf;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  background: #f8f6f0;
+  scroll-behavior: smooth;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  background: #f8f6f0;
+}
+
+button,
+textarea {
+  font: inherit;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.72;
+}
+
+::selection {
+  background: #cce5df;
+  color: #132b3a;
+}
+</file>
+
+<file path="src/main.tsx">
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import './index.css'
+import App from './App.tsx'
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+)
+</file>
+
+<file path="src/types.ts">
+export type ScenarioKey =
+  | "market_crash"
+  | "oil_shock"
+  | "inflation";
+
+export type ScenarioKind = "market" | "purchasing-power";
+
+export interface PortfolioHolding {
+  symbol: string;
+  name: string;
+  value: number;
+  allocation: number;
+}
+
+export interface Portfolio {
+  id: string;
+  name: string;
+  totalValue: number;
+  holdings: PortfolioHolding[];
+}
+
+export interface ScenarioDefinition {
+  key: ScenarioKey;
+  label: string;
+  shortDescription: string;
+  horizon: string;
+  assumptions: string[];
+  kind: ScenarioKind;
+}
+
+export interface HoldingAnalysis {
+  symbol: string;
+  name: string;
+  startingValue: number;
+  assumedReturnPercent: number;
+  contributionDollars: number;
+}
+
+export interface AnalysisResult {
+  analysisId: string;
+  scenarioKey: ScenarioKey;
+  kind: ScenarioKind;
+  label: string;
+  horizon: string;
+  assumptionsVersion: string;
+  explanation: string;
+  explanationSource: "predefined" | "bedrock" | "backend-standard";
+
+  currentValue?: number;
+  scenarioValue?: number;
+  impactDollars?: number;
+  impactPercent?: number;
+  holdings?: HoldingAnalysis[];
+
+  nominalValue?: number;
+  nominalReturnPercent?: number;
+  purchasingPowerValue?: number;
+  purchasingPowerChangeDollars?: number;
+  purchasingPowerChangePercent?: number;
+}
+</file>
+
+<file path=".env.development:">
+VITE_API_MODE=real
+VITE_API_BASE_URL=
+</file>
+
+<file path=".gitignore">
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+</file>
+
+<file path=".oxlintrc.json">
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["react", "typescript", "oxc"],
+  "rules": {
+    "react/rules-of-hooks": "error",
+    "react/only-export-components": ["warn", { "allowConstantExport": true }]
+  }
+}
+</file>
+
+<file path="index.html">
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ScenarioCraft — Portfolio Scenario Explorer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+</file>
+
+<file path="package.json">
+{
+  "name": "frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "oxlint",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.3",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.7",
+    "@vitejs/plugin-react": "^6.1.1",
+    "oxlint": "^1.81.0",
+    "typescript": "~6.0.2",
+    "vite": "^8.3.0"
+  }
+}
+</file>
+
+<file path="README.md">
+# React + TypeScript + Vite
+
+This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+
+Currently, two official plugins are available:
+
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+
+## React Compiler
+
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+
+## Expanding the Oxlint configuration
+
+If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+
+```json
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["react", "typescript", "oxc"],
+  "options": {
+    "typeAware": true
+  },
+  "rules": {
+    "react/rules-of-hooks": "error",
+    "react/only-export-components": ["warn", { "allowConstantExport": true }]
+  }
+}
+```
+
+See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+</file>
+
+<file path="tsconfig.app.json">
+{
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
+    "target": "es2023",
+    "lib": ["ES2023", "DOM"],
+    "module": "esnext",
+    "types": ["vite/client"],
+    "allowArbitraryExtensions": true,
+    "skipLibCheck": true,
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "jsx": "react-jsx",
+
+    /* Linting */
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "erasableSyntaxOnly": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": ["src"]
+}
+</file>
+
+<file path="tsconfig.json">
+{
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" }
+  ]
+}
+</file>
+
+<file path="tsconfig.node.json">
+{
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
+    "target": "es2023",
+    "lib": ["ES2023"],
+    "types": ["node"],
+    "skipLibCheck": true,
+
+    /* Bundler mode */
+    "module": "nodenext",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+
+    /* Linting */
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "erasableSyntaxOnly": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": ["vite.config.ts"]
+}
+</file>
+
+<file path="vite.config.ts">
+import react from '@vitejs/plugin-react'
+import { defineConfig } from 'vite'
+
+// https://vite.dev/config/
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    allowedHosts: ['dh133zzs2y30r.cloudfront.net'],
+    proxy: {
+      '/api': 'http://localhost:8081',
+    },
+  },
+})
+</file>
+
+</files>
