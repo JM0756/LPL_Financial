@@ -27,9 +27,10 @@ export default defineConfig({
     strictPort: true,
     allowedHosts: ["dh133zzs2y30r.cloudfront.net"],
     proxy: {
-      "/api": {
+      "/ports/5176/api": {
         target: "http://127.0.0.1:8081",
         changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/ports\/5176/, ""),
       },
     },
   },
