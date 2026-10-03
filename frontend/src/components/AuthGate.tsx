@@ -8,22 +8,16 @@ import {
   signUp,
   type StoredSession,
 } from "../auth";
+import wealthLensLogo from "../assets/Wealth Lens image .jpeg";
 
-type Flow =
-  | "role-select"
-  | "sign-in"
-  | "sign-up"
-  | "verify"
-  | "forgot-password"
-  | "reset-password";
+type Flow = "sign-in" | "sign-up" | "verify" | "forgot-password" | "reset-password";
 
 interface AuthGateProps {
   onAuthenticated: (session: StoredSession) => void;
 }
 
 export function AuthGate({ onAuthenticated }: AuthGateProps) {
-  const [flow, setFlow] = useState<Flow>("role-select");
-  const [selectedRole, setSelectedRole] = useState<"investor" | "advisor" | null>(null);
+  const [flow, setFlow] = useState<Flow>("sign-in");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -39,29 +33,12 @@ export function AuthGate({ onAuthenticated }: AuthGateProps) {
     setInfo("");
   }
 
-  function goToSignIn(role: "investor" | "advisor") {
-    setSelectedRole(role);
-    setFlow("sign-in");
-    clearMessages();
-  }
-
   async function handleSignIn(e: FormEvent) {
     e.preventDefault();
     clearMessages();
     setLoading(true);
     try {
       const session = await signIn(email, password);
-      // If user selected advisor but token says investor, explain the mismatch
-      if (selectedRole === "advisor" && session.role !== "advisor") {
-        setError(
-          "Your account does not have advisor access. " +
-          "Advisor accounts are provisioned by an administrator. " +
-          "You have been signed in as an investor."
-        );
-        // Still authenticate — let the app show the correct role from the token
-        onAuthenticated(session);
-        return;
-      }
       onAuthenticated(session);
     } catch (err: unknown) {
       const e2 = err as { code?: string; message?: string };
@@ -172,61 +149,16 @@ export function AuthGate({ onAuthenticated }: AuthGateProps) {
     }
   }
 
-  // ── Role selection ──────────────────────────────────────────────────────
-  if (flow === "role-select") {
-    return (
-      <div className="auth-gate">
-        <div className="auth-card">
-          <div className="auth-logo">
-            <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" width="48" height="48">
-              <circle cx="20" cy="20" r="18" fill="#102B46"/>
-              <circle cx="20" cy="20" r="12" fill="#1a4a6b"/>
-              <circle cx="20" cy="20" r="7.5" fill="#1a7972"/>
-              <circle cx="20" cy="20" r="3.5" fill="#2da89e"/>
-            </svg>
-          </div>
-          <h1 className="auth-title">WealthLens</h1>
-          <p className="auth-tagline">How are you signing in today?</p>
-          <div className="auth-role-grid">
-            <button
-              className="auth-role-btn"
-              type="button"
-              onClick={() => goToSignIn("investor")}
-            >
-              <span className="auth-role-icon" aria-hidden="true">👤</span>
-              <strong>I'm an Investor</strong>
-              <span>Sign in or create an account to explore your portfolio scenarios.</span>
-            </button>
-            <button
-              className="auth-role-btn"
-              type="button"
-              onClick={() => goToSignIn("advisor")}
-            >
-              <span className="auth-role-icon" aria-hidden="true">💼</span>
-              <strong>I'm an Advisor</strong>
-              <span>Sign in with your administrator-provisioned advisor account.</span>
-            </button>
-          </div>
-          <p className="auth-notice">
-            Selecting a role here does not grant permissions. Your actual access is determined by your account.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  // ── Sign-in ─────────────────────────────────────────────────────────────
+  // ── Sign-in (default) ───────────────────────────────────────────────────
   if (flow === "sign-in") {
     return (
       <div className="auth-gate">
-        <div className="auth-card">
-          <button className="auth-back-btn" type="button" onClick={() => { setFlow("role-select"); clearMessages(); }}>
-            ← Back
-          </button>
-          <h1 className="auth-title">Sign in</h1>
-          <p className="auth-tagline">
-            {selectedRole === "advisor" ? "Advisor account" : "Investor account"}
-          </p>
+        <a href="#auth-card" className="skip-link">Skip to sign in</a>
+        <div id="auth-card" className="auth-card">
+          <div className="auth-logo">
+            <img src={wealthLensLogo} alt="WealthLens" className="auth-logo-img" />
+          </div>
+          <p className="auth-tagline">Sign in to explore your portfolio scenarios</p>
 
           {error && <div className="auth-error" role="alert">{error}</div>}
           {info && <div className="auth-info" role="status">{info}</div>}
@@ -241,6 +173,7 @@ export function AuthGate({ onAuthenticated }: AuthGateProps) {
               value={email}
               onChange={(e) => { setEmail(e.target.value); clearMessages(); }}
               disabled={loading}
+              placeholder="you@example.com"
             />
             <label htmlFor="auth-password">Password</label>
             <input
@@ -261,32 +194,26 @@ export function AuthGate({ onAuthenticated }: AuthGateProps) {
             <button className="text-button" type="button" onClick={() => { setFlow("forgot-password"); clearMessages(); }}>
               Forgot password?
             </button>
-            {selectedRole === "investor" && (
-              <button className="text-button" type="button" onClick={() => { setFlow("sign-up"); clearMessages(); }}>
-                Create an account
-              </button>
-            )}
-            {selectedRole === "advisor" && (
-              <p className="auth-advisor-note">
-                Advisor accounts are provisioned by an administrator. Contact your administrator if you need access.
-              </p>
-            )}
+            <button className="text-button" type="button" onClick={() => { setFlow("sign-up"); clearMessages(); }}>
+              Create an account
+            </button>
           </div>
         </div>
       </div>
     );
   }
 
-  // ── Sign-up (investor only) ─────────────────────────────────────────────
+  // ── Sign-up ─────────────────────────────────────────────────────────────
   if (flow === "sign-up") {
     return (
       <div className="auth-gate">
-        <div className="auth-card">
+        <a href="#auth-card" className="skip-link">Skip to sign up</a>
+        <div id="auth-card" className="auth-card">
           <button className="auth-back-btn" type="button" onClick={() => { setFlow("sign-in"); clearMessages(); }}>
             ← Back to sign in
           </button>
           <h1 className="auth-title">Create account</h1>
-          <p className="auth-tagline">Investor account</p>
+          <p className="auth-tagline">New investor accounts are created here</p>
 
           {error && <div className="auth-error" role="alert">{error}</div>}
           {info && <div className="auth-info" role="status">{info}</div>}
@@ -301,6 +228,7 @@ export function AuthGate({ onAuthenticated }: AuthGateProps) {
               value={email}
               onChange={(e) => { setEmail(e.target.value); clearMessages(); }}
               disabled={loading}
+              placeholder="you@example.com"
             />
             <label htmlFor="su-password">Password</label>
             <input
@@ -345,7 +273,8 @@ export function AuthGate({ onAuthenticated }: AuthGateProps) {
   if (flow === "verify") {
     return (
       <div className="auth-gate">
-        <div className="auth-card">
+        <a href="#auth-card" className="skip-link">Skip to verification</a>
+        <div id="auth-card" className="auth-card">
           <h1 className="auth-title">Verify your email</h1>
           <p className="auth-tagline">Enter the code sent to {email || "your email"}</p>
 
@@ -373,6 +302,7 @@ export function AuthGate({ onAuthenticated }: AuthGateProps) {
               value={verifyCode}
               onChange={(e) => { setVerifyCode(e.target.value); clearMessages(); }}
               disabled={loading}
+              placeholder="123456"
             />
             <button className="primary-button auth-submit" type="submit" disabled={loading}>
               {loading ? "Verifying…" : "Verify email"}
@@ -396,7 +326,8 @@ export function AuthGate({ onAuthenticated }: AuthGateProps) {
   if (flow === "forgot-password") {
     return (
       <div className="auth-gate">
-        <div className="auth-card">
+        <a href="#auth-card" className="skip-link">Skip to password reset</a>
+        <div id="auth-card" className="auth-card">
           <button className="auth-back-btn" type="button" onClick={() => { setFlow("sign-in"); clearMessages(); }}>
             ← Back to sign in
           </button>
@@ -416,6 +347,7 @@ export function AuthGate({ onAuthenticated }: AuthGateProps) {
               value={email}
               onChange={(e) => { setEmail(e.target.value); clearMessages(); }}
               disabled={loading}
+              placeholder="you@example.com"
             />
             <button className="primary-button auth-submit" type="submit" disabled={loading}>
               {loading ? "Sending…" : "Send reset code"}
@@ -429,7 +361,8 @@ export function AuthGate({ onAuthenticated }: AuthGateProps) {
   // ── Reset password ──────────────────────────────────────────────────────
   return (
     <div className="auth-gate">
-      <div className="auth-card">
+      <a href="#auth-card" className="skip-link">Skip to password reset</a>
+      <div id="auth-card" className="auth-card">
         <h1 className="auth-title">Set new password</h1>
         <p className="auth-tagline">Enter the code sent to {email || "your email"}</p>
 
@@ -457,6 +390,7 @@ export function AuthGate({ onAuthenticated }: AuthGateProps) {
             value={resetCode}
             onChange={(e) => { setResetCode(e.target.value); clearMessages(); }}
             disabled={loading}
+            placeholder="123456"
           />
           <label htmlFor="rp-newpw">New password</label>
           <input

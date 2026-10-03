@@ -13,12 +13,85 @@ import {
   type HoldingId,
 } from "../demo-storage";
 
+type AssetClass = "Equity" | "Fixed Income" | "Cash";
+const ASSET_CLASS_COLORS: Record<AssetClass, string> = {
+  Equity: "#2dd4bf",      // Teal - works in both themes
+  "Fixed Income": "#fbbf24", // Amber - works in both themes  
+  Cash: "#94a3b8",        // Slate - works in both themes
+};
+
 interface PortfolioPageProps {
   account: DemoAccount;
   onSave: () => void;
   onDirtyChange?: (dirty: boolean) => void;
   saveRequested?: boolean;
   onExplore?: () => void;
+}
+
+interface AllocationData {
+  assetClass: AssetClass;
+  amount: number;
+  percent: number;
+}
+
+interface DonutChartProps {
+  allocations: AllocationData[];
+  total: number;
+}
+
+function DonutChart({ allocations, total }: DonutChartProps) {
+  const size = 140;
+  const strokeWidth = 28;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const center = size / 2;
+
+  if (total <= 0) {
+    return (
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label="Empty portfolio chart">
+        <circle cx={center} cy={center} r={radius} fill="none" stroke="currentColor" strokeWidth={strokeWidth} style={{ color: 'var(--color-border)' }} />
+      </svg>
+    );
+  }
+
+  const validAllocations = allocations.filter(a => a.amount > 0);
+  // Pre-compute cumulative percentages
+  const cumulativePcts = validAllocations.reduce<number[]>((acc, _, i) => {
+    acc.push(i === 0 ? 0 : acc[i - 1] + validAllocations[i - 1].amount / total);
+    return acc;
+  }, []);
+
+  const segments = validAllocations.map((alloc, i) => {
+    const dashLength = (alloc.amount / total) * circumference;
+    const dashOffset = -cumulativePcts[i] * circumference;
+    return { ...alloc, dashLength, dashOffset };
+  });
+
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox={`0 0 ${size} ${size}`}
+      role="img"
+      aria-label={`Portfolio allocation: ${segments.map(s => `${s.assetClass} ${s.percent.toFixed(1)}%`).join(", ")}`}
+      style={{ transform: "rotate(-90deg)" }}
+    >
+      {segments.map((seg) => (
+        <circle
+          key={seg.assetClass}
+          cx={center}
+          cy={center}
+          r={radius}
+          fill="none"
+          stroke={ASSET_CLASS_COLORS[seg.assetClass]}
+          strokeWidth={strokeWidth}
+          strokeDasharray={`${seg.dashLength} ${circumference - seg.dashLength}`}
+          strokeDashoffset={seg.dashOffset}
+          strokeLinecap="butt"
+        />
+      ))}
+    </svg>
+  );
 }
 
 const currencyFormatter = new Intl.NumberFormat("en-US", {
@@ -237,7 +310,74 @@ export function PortfolioPage({ account, onSave, onDirtyChange, saveRequested, o
     return sum + (isNaN(n) ? 0 : n);
   }, 0);
 
+  // Check if all drafts are valid
+  const allDraftsValid = SUPPORTED_HOLDING_IDS.every((id) => {
+    const err = validateDraft(drafts[id] ?? "", HOLDING_LABELS[id]);
+    return err === null;
+  });
+
+  // Compute allocation by asset class
+  const allocationByClass: AllocationData[] = (["Equity", "Fixed Income", "Cash"] as AssetClass[]).map((ac) => {
+    const amount = SUPPORTED_HOLDING_IDS.reduce((sum, id) => {
+      if (HOLDING_ASSET_CLASS[id] !== ac) return sum;
+      const n = parseDollarInput(drafts[id] ?? "0");
+      return sum + (isNaN(n) ? 0 : n);
+    }, 0);
+    return {
+      assetClass: ac,
+      amount,
+      percent: parsedTotal > 0 ? (amount / parsedTotal) * 100 : 0,
+    };
+  });
+
+  // Find largest holding(s)
+  const holdingValues = SUPPORTED_HOLDING_IDS.map((id) => {
+    const n = parseDollarInput(drafts[id] ?? "0");
+    return { id, value: isNaN(n) ? 0 : n };
+  });
+  const maxValue = Math.max(...holdingValues.map((h) => h.value));
+  const largestHoldings = holdingValues.filter((h) => h.value === maxValue && h.value > 0);
+
+  function handleSaveAndExplore() {
+    // Validate all fields
+    const errors: Partial<Record<HoldingId, string>> = {};
+    let hasError = false;
+    for (const id of SUPPORTED_HOLDING_IDS) {
+      const err = validateDraft(drafts[id] ?? "", HOLDING_LABELS[id]);
+      if (err) {
+        errors[id] = err;
+        hasError = true;
+      }
+    }
+    if (hasError) {
+      setFieldErrors(errors);
+      setFormError("Fix the errors above before saving.");
+      return;
+    }
+
+    const holdings: CustomHolding[] = SUPPORTED_HOLDING_IDS.map((id) => ({
+      holdingId: id,
+      value: parseDollarInput(drafts[id] ?? "0"),
+    })).filter((h) => h.value > 0);
+
+    const err = validateHoldings(holdings);
+    if (err) {
+      setFormError(err);
+      return;
+    }
+
+    updateAccountHoldings(account.id, holdings);
+    setSaved(true);
+    setIsDirty(false);
+    setFormError("");
+    setFieldErrors({});
+    onDirtyChange?.(false);
+    onSave();
+    onExplore?.();
+  }
+
   return (
+    <div className="portfolio-page-layout">
     <section className="portfolio-page" aria-labelledby="portfolio-page-title">
       <div className="portfolio-page-header">
         <div>
@@ -372,21 +512,112 @@ export function PortfolioPage({ account, onSave, onDirtyChange, saveRequested, o
         all totals, weights, and scenario impacts from the submitted holdings.
       </p>
 
-      {onExplore && (
-        <div className="portfolio-explore-cta">
-          <button
-            className="primary-button"
-            type="button"
-            onClick={onExplore}
-            disabled={isDirty}
-          >
-            Explore scenarios →
-          </button>
-          {isDirty && (
-            <p className="portfolio-explore-hint">Save your changes first to use them in analysis.</p>
-          )}
-        </div>
-      )}
     </section>
+
+    <aside className="portfolio-summary-panel" aria-labelledby="summary-title">
+      <div className="portfolio-summary-sticky">
+        <h3 id="summary-title" className="portfolio-summary-title">Portfolio at a glance</h3>
+        
+        {isDirty && (
+          <p className="portfolio-summary-status portfolio-summary-status-unsaved">
+            Preview · Unsaved changes
+          </p>
+        )}
+        {!isDirty && saved && (
+          <p className="portfolio-summary-status portfolio-summary-status-saved">
+            Saved ✓
+          </p>
+        )}
+        {!isDirty && !saved && (
+          <p className="portfolio-summary-status">
+            Current saved values
+          </p>
+        )}
+
+        {!allDraftsValid ? (
+          <div className="portfolio-summary-invalid">
+            <p>Complete valid amounts to update the summary.</p>
+          </div>
+        ) : parsedTotal <= 0 ? (
+          <div className="portfolio-summary-invalid">
+            <p>Portfolio total must be greater than zero.</p>
+          </div>
+        ) : (
+          <>
+            <div className="portfolio-summary-total">
+              <span>Total value</span>
+              <strong>{currencyFormatter.format(parsedTotal)}</strong>
+            </div>
+
+            <div className="portfolio-summary-chart">
+              <DonutChart allocations={allocationByClass} total={parsedTotal} />
+              <ul className="portfolio-summary-legend" aria-label="Asset allocation">
+                {allocationByClass.map((alloc) => (
+                  <li key={alloc.assetClass}>
+                    <span
+                      className="portfolio-legend-dot"
+                      style={{ background: ASSET_CLASS_COLORS[alloc.assetClass] }}
+                      aria-hidden="true"
+                    />
+                    <span className="portfolio-legend-label">{alloc.assetClass}</span>
+                    <span className="portfolio-legend-values">
+                      <strong>{currencyFormatter.format(alloc.amount)}</strong>
+                      <span>{alloc.percent.toFixed(1)}%</span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="portfolio-summary-largest">
+              <span className="portfolio-summary-largest-label">Largest holding</span>
+              {largestHoldings.length === 1 ? (
+                <div className="portfolio-summary-largest-value">
+                  <strong>{HOLDING_LABELS[largestHoldings[0].id]}</strong>
+                  <span>
+                    {currencyFormatter.format(largestHoldings[0].value)} · {((largestHoldings[0].value / parsedTotal) * 100).toFixed(1)}%
+                  </span>
+                </div>
+              ) : largestHoldings.length > 1 ? (
+                <div className="portfolio-summary-largest-value">
+                  <strong>{largestHoldings.length} holdings tied</strong>
+                  <span>
+                    {currencyFormatter.format(maxValue)} each · {((maxValue / parsedTotal) * 100).toFixed(1)}% each
+                  </span>
+                </div>
+              ) : (
+                <div className="portfolio-summary-largest-value">
+                  <span>No holdings</span>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
+        {onExplore && (
+          <div className="portfolio-summary-actions">
+            {isDirty ? (
+              <button
+                className="primary-button portfolio-summary-btn"
+                type="button"
+                onClick={handleSaveAndExplore}
+                disabled={!allDraftsValid || parsedTotal <= 0}
+              >
+                Save & explore scenarios
+              </button>
+            ) : (
+              <button
+                className="primary-button portfolio-summary-btn"
+                type="button"
+                onClick={onExplore}
+              >
+                Explore scenarios
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    </aside>
+    </div>
   );
 }

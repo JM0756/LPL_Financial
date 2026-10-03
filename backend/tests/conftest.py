@@ -8,6 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 os.environ["BEDROCK_ENABLED"] = "false"   # template explanations only
 os.environ["STORAGE_ENABLED"] = "false"   # in-memory store
+os.environ["AUTH_ENABLED"] = "false"      # disable auth for tests
 os.environ["AWS_REGION"] = "us-east-1"
 
 import pytest  # noqa: E402

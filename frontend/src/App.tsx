@@ -4,7 +4,6 @@ import {
   analyzeScenario,
   API_MODE,
   createAdvisorQuestion,
-  createDiscussion,
   getPortfolio,
   getScenarios,
   interpretQuestion,
@@ -13,11 +12,9 @@ import {
   AUTH_ENABLED,
   clearSession,
   getStoredSession,
-  refreshSession,
   type StoredSession,
 } from "./auth";
 import { AccountManager } from "./components/AccountManager";
-import { AdvisorView } from "./components/AdvisorView";
 import { AnalysisResults } from "./components/AnalysisResults";
 import { AuthGate } from "./components/AuthGate";
 import { MagnitudeControl } from "./components/MagnitudeControl";
@@ -30,6 +27,7 @@ import {
   type DemoAccount,
   type DemoProfile,
 } from "./demo-storage";
+import wealthLensLogo from "./assets/Wealth Lens image .jpeg";
 import type {
   AnalysisResult,
   InterpretResult,
@@ -54,46 +52,23 @@ const HOLDING_COLORS = [
   "holding-color-6",
 ];
 
-type DiscussState = { status: "idle" | "saving" | "saved" | "error"; error: string };
 type NavTab = "explore" | "portfolio";
 type UnsavedGuardAction = "save" | "discard" | "stay";
 
 function App() {
-  // --- auth state (only active when AUTH_ENABLED) ---
-  const [authSession, setAuthSession] = useState<StoredSession | null>(() =>
-    AUTH_ENABLED ? getStoredSession() : null
-  );
+  // Cognito session state (only used when AUTH_ENABLED)
+  const [session, setSession] = useState<StoredSession | null>(() => AUTH_ENABLED ? getStoredSession() : null);
 
-  // Attempt silent refresh on mount when auth is enabled
-  useEffect(() => {
-    if (!AUTH_ENABLED) return;
-    if (authSession) return; // already have a session
-    refreshSession().then((s) => { if (s) setAuthSession(s); });
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  function handleSignOut() {
-    clearSession();
-    setAuthSession(null);
-  }
-
-  // --- profile/account state ---
-  const [activeProfile, setActiveProfile] = useState<DemoProfile | null>(() => getActiveProfile());
-  const [activeAccount, setActiveAccount] = useState<DemoAccount | null>(() => getActiveAccount());
-
-  // --- data loading ---
+  // Demo profile state (only used when !AUTH_ENABLED)
+  const [activeProfile, setActiveProfile] = useState<DemoProfile | null>(() => AUTH_ENABLED ? null : getActiveProfile());
+  const [activeAccount, setActiveAccount] = useState<DemoAccount | null>(() => AUTH_ENABLED ? null : getActiveAccount());
   const [portfolio, setPortfolio] = useState<Portfolio | null>(null);
   const [scenarios, setScenarios] = useState<ScenarioDefinition[]>([]);
   const [loadError, setLoadError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-
-  // --- nav ---
   const [navTab, setNavTab] = useState<NavTab>("explore");
-  const [isAdvisorMode, setIsAdvisorMode] = useState(false);
-  // Guard: pending nav when Holdings has unsaved edits
   const [pendingNav, setPendingNav] = useState<NavTab | null>(null);
   const [portfolioIsDirty, setPortfolioIsDirty] = useState(false);
-
-  // --- scenario selection ---
   const [selectedKey, setSelectedKey] = useState<ScenarioKey | null>(null);
   const [magnitude, setMagnitude] = useState<number | null>(null);
   const [inflationHorizonMonths, setInflationHorizonMonths] = useState<number>(12);
@@ -101,13 +76,17 @@ function App() {
   const [questionStatus, setQuestionStatus] = useState("");
   const [isInterpreting, setIsInterpreting] = useState(false);
   const [interpretResult, setInterpretResult] = useState<InterpretResult | null>(null);
-
-  // --- analysis ---
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [analysisError, setAnalysisError] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  // Track config at analysis time to detect staleness
   const [analysisConfigKey, setAnalysisConfigKey] = useState<string | null>(null);
+  const [showComparison, setShowComparison] = useState(false);
+
+  type AdvisorQState = { status: "idle" | "saving" | "saved" | "error"; error: string };
+  const [advisorQNote, setAdvisorQNote] = useState("");
+  const [advisorQState, setAdvisorQState] = useState<AdvisorQState>({ status: "idle", error: "" });
+  const advisorQIdempotencyRef = useRef("");
+  const requestIdRef = useRef(0);
 
   function makeConfigKey() {
     const holdingsKey = activeAccount?.customHoldings
@@ -116,29 +95,24 @@ function App() {
     return `${selectedKey}|${magnitude ?? "default"}|${inflationHorizonMonths}|${holdingsKey}`;
   }
 
-  // --- comparison ---
-  const [showComparison, setShowComparison] = useState(false);
-
-  // --- discuss ---
-  const [discussState, setDiscussState] = useState<DiscussState>({ status: "idle", error: "" });
-
-  // --- unsupported question advisor handoff ---
-  type AdvisorQState = { status: "idle" | "saving" | "saved" | "error"; error: string };
-  const [advisorQNote, setAdvisorQNote] = useState("");
-  const [advisorQState, setAdvisorQState] = useState<AdvisorQState>({ status: "idle", error: "" });
-  const advisorQIdempotencyRef = useRef("");
-
-  const requestIdRef = useRef(0);
-
   const refreshDemoState = useCallback(() => {
-    setActiveProfile(getActiveProfile());
-    setActiveAccount(getActiveAccount());
+    if (!AUTH_ENABLED) {
+      setActiveProfile(getActiveProfile());
+      setActiveAccount(getActiveAccount());
+    }
     setAnalysis(null);
     setAnalysisError("");
-    setDiscussState({ status: "idle", error: "" });
   }, []);
 
-  // Navigate to a tab, guarding against unsaved Holdings edits
+  function handleSignOut() {
+    if (AUTH_ENABLED) {
+      clearSession();
+      setSession(null);
+    } else {
+      // Demo mode sign out handled by ProfileManager
+    }
+  }
+
   function requestNavTo(tab: NavTab) {
     if (navTab === "portfolio" && portfolioIsDirty) {
       setPendingNav(tab);
@@ -157,20 +131,12 @@ function App() {
       setNavTab(pendingNav);
       setPendingNav(null);
     }
-    // "save" is handled by PortfolioPage calling onSave which sets isDirty=false
-    // then we navigate
   }
 
-  // ---------------------------------------------------------------------------
-  // Load portfolio + scenarios on mount
-  // ---------------------------------------------------------------------------
   useEffect(() => {
     const ac = new AbortController();
     Promise.all([getPortfolio(ac.signal), getScenarios(ac.signal)])
-      .then(([p, s]) => {
-        setPortfolio(p);
-        setScenarios(s);
-      })
+      .then(([p, s]) => { setPortfolio(p); setScenarios(s); })
       .catch((err: unknown) => {
         if (err instanceof DOMException && err.name === "AbortError") return;
         setLoadError(err instanceof Error ? err.message : "Could not load portfolio data.");
@@ -179,22 +145,18 @@ function App() {
     return () => ac.abort();
   }, []);
 
-  // ---------------------------------------------------------------------------
-  // Helpers
-  // ---------------------------------------------------------------------------
   const selectedScenario = scenarios.find((s) => s.key === selectedKey) ?? null;
 
   function selectScenario(key: ScenarioKey) {
     requestIdRef.current += 1;
     setSelectedKey(key);
-    setMagnitude(null); // reset to default when switching scenarios
+    setMagnitude(null);
     setInflationHorizonMonths(12);
     setAnalysis(null);
     setAnalysisError("");
     setQuestionStatus("");
     setInterpretResult(null);
     setIsAnalyzing(false);
-    setDiscussState({ status: "idle", error: "" });
   }
 
   function clearSelection() {
@@ -205,12 +167,8 @@ function App() {
     setAnalysis(null);
     setAnalysisError("");
     setInterpretResult(null);
-    setDiscussState({ status: "idle", error: "" });
   }
 
-  // ---------------------------------------------------------------------------
-  // Interpret typed question
-  // ---------------------------------------------------------------------------
   async function handleQuestionSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!question.trim()) {
@@ -227,20 +185,14 @@ function App() {
         setSelectedKey(result.scenarioKey);
         setAnalysis(null);
         setAnalysisError("");
-        setDiscussState({ status: "idle", error: "" });
       }
     } catch (err) {
-      setQuestionStatus(
-        err instanceof Error ? err.message : "Interpretation failed. Choose a scenario below.",
-      );
+      setQuestionStatus(err instanceof Error ? err.message : "Interpretation failed.");
     } finally {
       setIsInterpreting(false);
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // Send unsupported question to advisor
-  // ---------------------------------------------------------------------------
   async function handleSendToAdvisor() {
     if (!question.trim() || advisorQState.status === "saving" || advisorQState.status === "saved") return;
     if (!advisorQIdempotencyRef.current) {
@@ -248,95 +200,42 @@ function App() {
     }
     setAdvisorQState({ status: "saving", error: "" });
     try {
-      await createAdvisorQuestion(
-        question.trim(),
-        advisorQNote.trim() || null,
-        advisorQIdempotencyRef.current,
-      );
+      await createAdvisorQuestion(question.trim(), advisorQNote.trim() || null, advisorQIdempotencyRef.current);
       setAdvisorQState({ status: "saved", error: "" });
     } catch (err) {
-      setAdvisorQState({
-        status: "error",
-        error: err instanceof Error ? err.message : "Could not save question.",
-      });
+      setAdvisorQState({ status: "error", error: err instanceof Error ? err.message : "Could not save question." });
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // Analyze
-  // ---------------------------------------------------------------------------
   async function handleAnalyze() {
     if (!selectedKey || !selectedScenario) return;
     const requestId = ++requestIdRef.current;
     setIsAnalyzing(true);
     setAnalysis(null);
     setAnalysisError("");
-    setDiscussState({ status: "idle", error: "" });
-
-    // Build custom holdings from active account if set
     const customHoldings = activeAccount?.customHoldings ?? null;
-    // Compute portfolio total - used for scaling when custom holdings exist
-    const portfolioTotal = customHoldings
-      ? customHoldings.reduce((sum, h) => sum + h.value, 0)
-      : null;
-    // Use magnitude override if set and different from default
-    const magnitudeOverride =
-      magnitude !== null && selectedScenario && magnitude !== selectedScenario.paramDefault
-        ? magnitude
-        : null;
-
-    // For inflation, use the editable horizon; for others, use the preset horizon
-    const horizonToUse = selectedScenario.kind === "purchasing-power"
-      ? `${inflationHorizonMonths}M`
-      : selectedScenario.horizon;
-
+    const portfolioTotal = customHoldings ? customHoldings.reduce((sum, h) => sum + h.value, 0) : null;
+    const magnitudeOverride = magnitude !== null && selectedScenario && magnitude !== selectedScenario.paramDefault ? magnitude : null;
+    const horizonToUse = selectedScenario.kind === "purchasing-power" ? `${inflationHorizonMonths}M` : selectedScenario.horizon;
     try {
       const result = await analyzeScenario(
-        selectedKey,
-        horizonToUse,
+        selectedKey, horizonToUse,
         interpretResult?.status !== "unsupported" ? (question.trim() || null) : null,
-        customHoldings
-          ? customHoldings.map((h) => ({ holdingId: h.holdingId, value: h.value }))
-          : null,
-        magnitudeOverride,
-        portfolioTotal,
+        customHoldings ? customHoldings.map((h) => ({ holdingId: h.holdingId, value: h.value })) : null,
+        magnitudeOverride, portfolioTotal,
       );
       if (requestId !== requestIdRef.current) return;
       setAnalysis(result);
       setAnalysisConfigKey(makeConfigKey());
-      window.setTimeout(() => {
-        document.getElementById("analysis-results")?.scrollIntoView({ behavior: "smooth", block: "start" });
-      }, 0);
+      window.setTimeout(() => { document.getElementById("analysis-results")?.scrollIntoView({ behavior: "smooth", block: "start" }); }, 0);
     } catch (err) {
       if (requestId !== requestIdRef.current) return;
-      setAnalysisError(
-        err instanceof Error ? err.message : "The analysis could not be completed.",
-      );
+      setAnalysisError(err instanceof Error ? err.message : "The analysis could not be completed.");
     } finally {
       if (requestId === requestIdRef.current) setIsAnalyzing(false);
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // Discuss
-  // ---------------------------------------------------------------------------
-  async function handleDiscuss() {
-    if (!analysis) return;
-    setDiscussState({ status: "saving", error: "" });
-    try {
-      await createDiscussion(analysis.analysisId);
-      setDiscussState({ status: "saved", error: "" });
-    } catch (err) {
-      setDiscussState({
-        status: "error",
-        error: err instanceof Error ? err.message : "Could not save discussion request.",
-      });
-    }
-  }
-
-  // ---------------------------------------------------------------------------
-  // Try another
-  // ---------------------------------------------------------------------------
   function handleTryAnother() {
     requestIdRef.current += 1;
     setSelectedKey(null);
@@ -347,125 +246,61 @@ function App() {
     setQuestion("");
     setQuestionStatus("");
     setInterpretResult(null);
-    setDiscussState({ status: "idle", error: "" });
     document.getElementById("scenario-panel-title")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  // ---------------------------------------------------------------------------
-  // Render — auth gate (when Cognito is configured)
-  // ---------------------------------------------------------------------------
-  if (AUTH_ENABLED && !authSession) {
-    return <AuthGate onAuthenticated={setAuthSession} />;
+  // ── Authentication gate ─────────────────────────────────────────────────
+  // When Cognito is configured, require sign-in via AuthGate.
+  // When Cognito is NOT configured, use demo profiles (ProfileManager).
+  if (AUTH_ENABLED) {
+    if (!session) {
+      return <AuthGate onAuthenticated={(s) => setSession(s)} />;
+    }
+  } else {
+    // Demo mode: require a demo profile
+    if (!activeProfile) {
+      return <ProfileManager activeProfile={null} onProfileChange={refreshDemoState} />;
+    }
   }
 
-  // ---------------------------------------------------------------------------
-  // Render — profile gate (demo mode, when auth is not configured)
-  // ---------------------------------------------------------------------------
-  if (!AUTH_ENABLED && !activeProfile) {
-    return (
-      <ProfileManager activeProfile={null} onProfileChange={refreshDemoState} />
-    );
-  }
-
-  // ---------------------------------------------------------------------------
-  // Render — main app
-  // ---------------------------------------------------------------------------
-  const displayPortfolio = activeAccount?.customHoldings
-    ? {
-        ...portfolio,
-        totalValue: activeAccount.customHoldings.reduce((s, h) => s + h.value, 0),
-        holdings: activeAccount.customHoldings.map((h) => ({
-          identifier: h.holdingId,
-          name: h.holdingId.replace(/_/g, " "),
-          assetClass: "",
-          sector: "",
-          value: h.value,
-          allocation: 0,
-        })),
-      }
-    : portfolio;
-
-  // Compute allocations for display
-  if (displayPortfolio?.holdings && displayPortfolio.totalValue > 0) {
-    displayPortfolio.holdings = displayPortfolio.holdings.map((h) => ({
-      ...h,
-      allocation: (h.value / displayPortfolio.totalValue) * 100,
-    }));
-  }
+  // Determine display name for header
+  const displayName = AUTH_ENABLED ? session?.email : activeProfile?.name;
 
   return (
     <div className="app-shell">
       <header className="site-header">
         <div className="site-header-inner">
           <a className="brand" href="#main-content" aria-label="WealthLens home">
-            <span className="brand-logo" aria-hidden="true">
-              <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" width="36" height="36">
-                <circle cx="20" cy="20" r="18" fill="#102B46"/>
-                <circle cx="20" cy="20" r="12" fill="#1a4a6b"/>
-                <circle cx="20" cy="20" r="7.5" fill="#1a7972"/>
-                <circle cx="20" cy="20" r="3.5" fill="#2da89e"/>
-                <ellipse cx="16.5" cy="16.5" rx="2.5" ry="1.6" fill="white" opacity="0.25" transform="rotate(-20 16.5 16.5)"/>
-                <circle cx="24" cy="16" r="1" fill="white" opacity="0.35"/>
-              </svg>
-            </span>
-            <span className="brand-name">WealthLens</span>
+            <img src={wealthLensLogo} alt="WealthLens" className="brand-logo-img" />
           </a>
-
           <nav className="main-nav-inline" aria-label="Main navigation">
-            <button
-              className={`nav-tab ${navTab === "portfolio" ? "nav-tab-active" : ""}`}
-              type="button"
-              onClick={() => requestNavTo("portfolio")}
-            >Holdings</button>
-            <button
-              className={`nav-tab ${navTab === "explore" ? "nav-tab-active" : ""}`}
-              type="button"
-              onClick={() => requestNavTo("explore")}
-            >Explore</button>
+            <button className={`nav-tab ${navTab === "portfolio" ? "nav-tab-active" : ""}`} type="button" onClick={() => requestNavTo("portfolio")}>Holdings</button>
+            <button className={`nav-tab ${navTab === "explore" ? "nav-tab-active" : ""}`} type="button" onClick={() => requestNavTo("explore")}>Explore</button>
           </nav>
-
           <div className="header-right">
-            {(isAdvisorMode || (AUTH_ENABLED && authSession?.role === "advisor")) && (
-              <span className="advisor-mode-label">
-                {AUTH_ENABLED && authSession?.role === "advisor" ? "Advisor View" : "Advisor Demo"}
-              </span>
-            )}
             {API_MODE === "mock" && <span className="mock-mode-label">Demo data</span>}
-            {AUTH_ENABLED && authSession ? (
-              <div className="auth-session-banner">
-                <span className={`auth-user-badge ${authSession.role === "advisor" ? "auth-role-badge-advisor" : ""}`}
-                  title={authSession.email}>
-                  {authSession.role === "advisor" ? "Advisor" : "Investor"} · {authSession.email}
-                </span>
-                <button className="text-button auth-signout-btn" type="button" onClick={handleSignOut}>
+            {AUTH_ENABLED ? (
+              <div className="auth-user-bar">
+                <span className="auth-user-email">{displayName}</span>
+                <button className="text-button" type="button" onClick={handleSignOut}>
                   Sign out
                 </button>
               </div>
-            ) : !AUTH_ENABLED ? (
-              <ProfileManager
-                activeProfile={activeProfile}
-                onProfileChange={refreshDemoState}
-                onAdvisorMode={() => setIsAdvisorMode((v) => !v)}
-                isAdvisorMode={isAdvisorMode}
-              />
-            ) : null}
+            ) : (
+              <ProfileManager activeProfile={activeProfile} onProfileChange={refreshDemoState} />
+            )}
           </div>
         </div>
       </header>
 
-      {/* Portfolio toolbar */}
-      {activeProfile && (
+      {!AUTH_ENABLED && activeProfile && (
         <div className="account-bar">
           <div className="account-bar-inner">
-            <AccountManager
-              profile={activeProfile}
-              onAccountChange={refreshDemoState}
-            />
+            <AccountManager profile={activeProfile} onAccountChange={refreshDemoState} />
           </div>
         </div>
       )}
 
-      {/* Mobile nav (hidden on desktop via CSS) */}
       <div className="mobile-nav" aria-label="Main navigation">
         <div className="mobile-nav-inner">
           <button className={`nav-tab ${navTab === "portfolio" ? "nav-tab-active" : ""}`} type="button" onClick={() => requestNavTo("portfolio")}>Holdings</button>
@@ -474,18 +309,13 @@ function App() {
       </div>
 
       <main id="main-content" className="main-content">
-        {/* Unsaved holdings guard dialog */}
         {pendingNav && (
           <div className="unsaved-guard-overlay" role="dialog" aria-modal="true" aria-labelledby="guard-title">
             <div className="unsaved-guard-card">
               <h2 id="guard-title" className="unsaved-guard-title">Unsaved changes</h2>
-              <p className="unsaved-guard-body">Your Holdings have unsaved edits. Save them before leaving, or discard your changes.</p>
+              <p className="unsaved-guard-body">Your Holdings have unsaved edits.</p>
               <div className="unsaved-guard-actions">
-                <button className="primary-button" type="button" onClick={() => {
-                  // Signal PortfolioPage to save — it will call onSave which clears dirty
-                  // We use a custom event for simplicity
-                  window.dispatchEvent(new CustomEvent("wl:portfolio-save-request"));
-                }}>Save changes</button>
+                <button className="primary-button" type="button" onClick={() => window.dispatchEvent(new CustomEvent("wl:portfolio-save-request"))}>Save changes</button>
                 <button className="secondary-button" type="button" onClick={() => handleGuardAction("discard")}>Discard</button>
                 <button className="text-button" type="button" onClick={() => handleGuardAction("stay")}>Stay</button>
               </div>
@@ -493,23 +323,11 @@ function App() {
           </div>
         )}
 
-        {/* Show AdvisorView if in advisor mode (demo) or if authenticated as advisor */}
-        {(isAdvisorMode || (AUTH_ENABLED && authSession?.role === "advisor")) ? (
-          <AdvisorView />
-        ) : navTab === "portfolio" && activeAccount ? (
+        {navTab === "portfolio" && activeAccount ? (
           <PortfolioPage
             account={activeAccount}
             onDirtyChange={setPortfolioIsDirty}
-            onSave={() => {
-              setPortfolioIsDirty(false);
-              refreshDemoState();
-              setAnalysis(null);
-              setAnalysisError("");
-              if (pendingNav) {
-                setNavTab(pendingNav);
-                setPendingNav(null);
-              }
-            }}
+            onSave={() => { setPortfolioIsDirty(false); refreshDemoState(); setAnalysis(null); setAnalysisError(""); if (pendingNav) { setNavTab(pendingNav); setPendingNav(null); } }}
             saveRequested={!!pendingNav}
             onExplore={() => setNavTab("explore")}
           />
@@ -517,259 +335,104 @@ function App() {
           <>
             <section className="intro-section" aria-labelledby="page-title">
               <h1 id="page-title">See your portfolio from a new perspective.</h1>
-              <p className="intro-copy">
-                Explore a market change, understand its potential impact, and prepare
-                for your next advisor conversation.
-              </p>
+              <p className="intro-copy">Explore a market change, understand its potential impact, and prepare for your next advisor conversation.</p>
             </section>
 
-            {isLoading && (
-              <div className="loading-state" role="status">
-                Loading portfolio data…
-              </div>
-            )}
-
+            {isLoading && <div className="loading-state" role="status">Loading portfolio data…</div>}
             {loadError && (
               <div className="error-message" role="alert">
                 <strong>Could not load portfolio</strong>
                 <span>{loadError}</span>
-                <button className="text-button" type="button" onClick={() => window.location.reload()}>
-                  Reload page
-                </button>
+                <button className="text-button" type="button" onClick={() => window.location.reload()}>Reload page</button>
               </div>
             )}
 
             {!isLoading && !loadError && portfolio && (
               <div className="workspace-grid">
-                {/* Portfolio card */}
                 <aside className="portfolio-card" aria-labelledby="portfolio-title">
                   <div className="card-heading">
                     <div>
-                      <p className="section-kicker">
-                        {activeAccount?.customHoldings ? "Custom portfolio" : "Synthetic portfolio"}
-                      </p>
+                      <p className="section-kicker">{activeAccount?.customHoldings ? "Custom portfolio" : "Synthetic portfolio"}</p>
                       <h2 id="portfolio-title">{activeAccount?.name ?? "Your starting point"}</h2>
                     </div>
-                    <span className="portfolio-badge">
-                      {activeAccount?.customHoldings ? "Custom" : "Demo"}
-                    </span>
+                    <span className="portfolio-badge">{activeAccount?.customHoldings ? "Custom" : "Demo"}</span>
                   </div>
-
                   <div className="portfolio-total">
                     <span>Current value</span>
-                    <strong>
-                      {currencyFormatter.format(
-                        activeAccount?.customHoldings
-                          ? activeAccount.customHoldings.reduce((s, h) => s + h.value, 0)
-                          : portfolio.totalValue
-                      )}
-                    </strong>
+                    <strong>{currencyFormatter.format(activeAccount?.customHoldings ? activeAccount.customHoldings.reduce((s, h) => s + h.value, 0) : portfolio.totalValue)}</strong>
                   </div>
-
-                  {/* Allocation bar */}
                   <div className="allocation-bar" aria-hidden="true">
                     {(activeAccount?.customHoldings
-                      ? activeAccount.customHoldings.map((h) => ({
-                          identifier: h.holdingId,
-                          allocation: (h.value / activeAccount.customHoldings!.reduce((s, x) => s + x.value, 0)) * 100,
-                        }))
+                      ? activeAccount.customHoldings.map((h) => ({ identifier: h.holdingId, allocation: (h.value / activeAccount.customHoldings!.reduce((s, x) => s + x.value, 0)) * 100 }))
                       : portfolio.holdings
-                    ).map((h, _i) => (
-                      <span
-                        key={h.identifier}
-                        className={HOLDING_COLORS[_i % HOLDING_COLORS.length]}
-                        style={{ width: `${h.allocation}%` }}
-                      />
-                    ))}
+                    ).map((h, i) => <span key={h.identifier} className={HOLDING_COLORS[i % HOLDING_COLORS.length]} style={{ width: `${h.allocation}%` }} />)}
                   </div>
-
                   <ul className="holdings-list">
                     {(activeAccount?.customHoldings
-                      ? activeAccount.customHoldings.map((h) => ({
-                          identifier: h.holdingId,
-                          name: h.holdingId.replace(/_/g, " "),
-                          assetClass: "",
-                          value: h.value,
-                          allocation: (h.value / activeAccount.customHoldings!.reduce((s, x) => s + x.value, 0)) * 100,
-                        }))
+                      ? activeAccount.customHoldings.map((h) => ({ identifier: h.holdingId, name: h.holdingId.replace(/_/g, " "), assetClass: "", value: h.value, allocation: (h.value / activeAccount.customHoldings!.reduce((s, x) => s + x.value, 0)) * 100 }))
                       : portfolio.holdings
-                    ).map((h, _i) => (
+                    ).map((h, i) => (
                       <li key={h.identifier} className="holding-row">
-                        <span className={`holding-dot ${HOLDING_COLORS[_i % HOLDING_COLORS.length]}`} aria-hidden="true" />
-                        <span className="holding-identity">
-                          <strong>{h.name}</strong>
-                          <span>{h.assetClass}</span>
-                        </span>
-                        <span className="holding-value">
-                          <strong>{currencyFormatter.format(h.value)}</strong>
-                          <span>{h.allocation.toFixed(0)}%</span>
-                        </span>
+                        <span className={`holding-dot ${HOLDING_COLORS[i % HOLDING_COLORS.length]}`} aria-hidden="true" />
+                        <span className="holding-identity"><strong>{h.name}</strong><span>{h.assetClass}</span></span>
+                        <span className="holding-value"><strong>{currencyFormatter.format(h.value)}</strong><span>{h.allocation.toFixed(0)}%</span></span>
                       </li>
                     ))}
                   </ul>
-
-                  <p className="portfolio-note">
-                    {activeAccount?.customHoldings
-                      ? "Custom portfolio saved in your browser. Edit it on the Holdings tab."
-                      : "This fictional portfolio is used consistently across all WealthLens demonstrations. All values are synthetic."}
-                  </p>
-
+                  <p className="portfolio-note">{activeAccount?.customHoldings ? "Custom portfolio saved in your browser." : "This fictional portfolio is used consistently across all WealthLens demonstrations."}</p>
                   <div className="portfolio-card-actions">
-                    <button
-                      className="text-button portfolio-edit-link"
-                      type="button"
-                      onClick={() => requestNavTo("portfolio")}
-                    >
-                      Edit holdings →
-                    </button>
+                    <button className="text-button portfolio-edit-link" type="button" onClick={() => requestNavTo("portfolio")}>Edit holdings →</button>
                   </div>
                 </aside>
 
-                {/* Scenario panel */}
                 <section className="scenario-panel" aria-labelledby="scenario-panel-title">
                   <div className="panel-heading">
                     <p className="section-kicker">Step 1 of 2</p>
                     <h2 id="scenario-panel-title">Explore a market scenario</h2>
                     <p>Choose a supported scenario or enter a question for interpretation.</p>
-                    <button
-                      className="secondary-button"
-                      type="button"
-                      style={{ marginTop: "12px" }}
-                      onClick={() => { setShowComparison(true); window.setTimeout(() => document.getElementById("cmp-panel-anchor")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0); }}
-                    >
-                      Compare two scenarios
-                    </button>
+                    <button className="secondary-button" type="button" style={{ marginTop: "12px" }} onClick={() => { setShowComparison(true); window.setTimeout(() => document.getElementById("cmp-panel-anchor")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0); }}>Compare two scenarios</button>
                   </div>
 
                   <form className="question-form" onSubmit={handleQuestionSubmit}>
-                    <label htmlFor="scenario-question">
-                      What market change are you considering?
-                    </label>
+                    <label htmlFor="scenario-question">What market change are you considering?</label>
                     <div className="question-field-row">
-                      <textarea
-                        id="scenario-question"
-                        value={question}
-                        onChange={(e) => {
-                          setQuestion(e.target.value);
-                          setQuestionStatus("");
-                          setInterpretResult(null);
-                          setAdvisorQState({ status: "idle", error: "" });
-                          setAdvisorQNote("");
-                          advisorQIdempotencyRef.current = "";
-                        }}
-                        placeholder="For example: What if the market crashes?"
-                        rows={2}
-                      />
-                      <button className="secondary-button" type="submit" disabled={isInterpreting}>
-                        {isInterpreting ? "Interpreting…" : "Interpret question"}
-                      </button>
+                      <textarea id="scenario-question" value={question} onChange={(e) => { setQuestion(e.target.value); setQuestionStatus(""); setInterpretResult(null); setAdvisorQState({ status: "idle", error: "" }); setAdvisorQNote(""); advisorQIdempotencyRef.current = ""; }} placeholder="For example: What if the market crashes?" rows={2} />
+                      <button className="secondary-button" type="submit" disabled={isInterpreting}>{isInterpreting ? "Interpreting…" : "Interpret question"}</button>
                     </div>
-
-                    {questionStatus && (
-                      <p className="field-message" role="status">{questionStatus}</p>
-                    )}
-
+                    {questionStatus && <p className="field-message" role="status">{questionStatus}</p>}
                     {interpretResult && (
-                      <div
-                        className={`interpret-result interpret-result-${interpretResult.status}`}
-                        role="status"
-                      >
+                      <div className={`interpret-result interpret-result-${interpretResult.status}`} role="status">
                         <p>{interpretResult.message}</p>
-
-                        {interpretResult.mismatchReasons.length > 0 && (
-                          <ul className="mismatch-reasons">
-                            {interpretResult.mismatchReasons.map((r) => (
-                              <li key={r}>{r}</li>
-                            ))}
-                          </ul>
-                        )}
-
-                        {interpretResult.status === "unsupported" &&
-                          interpretResult.offeredPresets.length > 0 && (
-                            <div className="offered-presets">
-                              <p>Supported scenarios:</p>
-                              {interpretResult.offeredPresets.map((p) => (
-                                <button
-                                  key={p.scenario_key}
-                                  className="scenario-option"
-                                  type="button"
-                                  onClick={() => selectScenario(p.scenario_key)}
-                                >
-                                  <span className="scenario-option-topline">
-                                    <strong>{p.label}</strong>
-                                  </span>
-                                  <span className="scenario-description">{p.magnitude_label}</span>
-                                </button>
-                              ))}
-                            </div>
-                          )}
-
-                        {interpretResult.status === "unsupported" && (
-                          <div className="advisor-handoff-panel">
-                            <p className="advisor-handoff-heading">
-                              We don't have a supported calculation for that scenario yet.
-                            </p>
-                            <p className="advisor-handoff-question">Your question: <em>"{question.trim()}"</em></p>
-                            <label htmlFor="advisor-note" className="advisor-note-label">
-                              Optional note for your advisor
-                            </label>
-                            <textarea
-                              id="advisor-note"
-                              className="advisor-note-input"
-                              value={advisorQNote}
-                              onChange={(e) => setAdvisorQNote(e.target.value)}
-                              placeholder="Add any context you'd like your advisor to know…"
-                              rows={2}
-                              disabled={advisorQState.status === "saved"}
-                            />
-                            {advisorQState.status !== "saved" && (
-                              <button
-                                className="secondary-button"
-                                type="button"
-                                onClick={handleSendToAdvisor}
-                                disabled={advisorQState.status === "saving"}
-                              >
-                                {advisorQState.status === "saving" ? "Saving…" : "Send question to advisor"}
+                        {interpretResult.mismatchReasons.length > 0 && <ul className="mismatch-reasons">{interpretResult.mismatchReasons.map((r) => <li key={r}>{r}</li>)}</ul>}
+                        {interpretResult.status === "unsupported" && interpretResult.offeredPresets.length > 0 && (
+                          <div className="offered-presets">
+                            <p>Supported scenarios:</p>
+                            {interpretResult.offeredPresets.map((p) => (
+                              <button key={p.scenario_key} className="scenario-option" type="button" onClick={() => selectScenario(p.scenario_key)}>
+                                <span className="scenario-option-topline"><strong>{p.label}</strong></span>
+                                <span className="scenario-description">{p.magnitude_label}</span>
                               </button>
-                            )}
-                            {advisorQState.status === "saved" && (
-                              <p className="advisor-q-success" role="status">
-                                Question saved. Switch to Advisor view to see it.
-                              </p>
-                            )}
-                            {advisorQState.status === "error" && (
-                              <div className="error-message" role="alert">
-                                <strong>Could not save</strong>
-                                <span>{advisorQState.error}</span>
-                                <button className="text-button" type="button" onClick={handleSendToAdvisor}>Retry</button>
-                              </div>
-                            )}
+                            ))}
                           </div>
                         )}
-
+                        {interpretResult.status === "unsupported" && (
+                          <div className="advisor-handoff-panel">
+                            <p className="advisor-handoff-heading">We don't have a supported calculation for that scenario yet.</p>
+                            <p className="advisor-handoff-question">Your question: <em>"{question.trim()}"</em></p>
+                            <label htmlFor="advisor-note" className="advisor-note-label">Optional note for your advisor</label>
+                            <textarea id="advisor-note" className="advisor-note-input" value={advisorQNote} onChange={(e) => setAdvisorQNote(e.target.value)} placeholder="Add any context…" rows={2} disabled={advisorQState.status === "saved"} />
+                            {advisorQState.status !== "saved" && <button className="secondary-button" type="button" onClick={handleSendToAdvisor} disabled={advisorQState.status === "saving"}>{advisorQState.status === "saving" ? "Saving…" : "Send question to advisor"}</button>}
+                            {advisorQState.status === "saved" && <p className="advisor-q-success" role="status">Question saved.</p>}
+                            {advisorQState.status === "error" && <div className="error-message" role="alert"><strong>Could not save</strong><span>{advisorQState.error}</span></div>}
+                          </div>
+                        )}
                         {interpretResult.status === "preset_offered" && interpretResult.scenarioKey && (
                           <>
-                            <p className="interpret-confirm-note">
-                              Select the preset below to review its exact assumptions before running the analysis.
-                            </p>
+                            <p className="interpret-confirm-note">Select the preset below to review its exact assumptions before running the analysis.</p>
                             <div className="advisor-handoff-panel advisor-handoff-panel-inline">
                               <p className="advisor-handoff-heading">Or send your original question to your advisor instead.</p>
-                              {advisorQState.status !== "saved" && (
-                                <button
-                                  className="text-button"
-                                  type="button"
-                                  onClick={handleSendToAdvisor}
-                                  disabled={advisorQState.status === "saving"}
-                                >
-                                  {advisorQState.status === "saving" ? "Saving…" : "Send question to advisor"}
-                                </button>
-                              )}
-                              {advisorQState.status === "saved" && (
-                                <p className="advisor-q-success" role="status">Question saved.</p>
-                              )}
-                              {advisorQState.status === "error" && (
-                                <span className="advisor-q-error">{advisorQState.error} <button className="text-button" type="button" onClick={handleSendToAdvisor}>Retry</button></span>
-                              )}
+                              {advisorQState.status !== "saved" && <button className="text-button" type="button" onClick={handleSendToAdvisor} disabled={advisorQState.status === "saving"}>{advisorQState.status === "saving" ? "Saving…" : "Send question to advisor"}</button>}
+                              {advisorQState.status === "saved" && <p className="advisor-q-success" role="status">Question saved.</p>}
                             </div>
                           </>
                         )}
@@ -777,189 +440,62 @@ function App() {
                     )}
                   </form>
 
-                  <div className="divider">
-                    <span>or choose a supported scenario</span>
-                  </div>
+                  <div className="divider"><span>or choose a supported scenario</span></div>
 
                   <div className="scenario-options">
-                    {scenarios.map((scenario) => {
-                      const isSelected = selectedKey === scenario.key;
-                      return (
-                        <button
-                          className={`scenario-option ${isSelected ? "scenario-option-selected" : ""}`}
-                          type="button"
-                          key={scenario.key}
-                          aria-pressed={isSelected}
-                          onClick={() => selectScenario(scenario.key)}
-                        >
-                          <span className="scenario-option-topline">
-                            <strong>{scenario.label}</strong>
-                            <span className="selection-indicator" aria-hidden="true">
-                              {isSelected ? "✓" : ""}
-                            </span>
-                          </span>
-                          <span className="scenario-description">{scenario.summary}</span>
-                          {scenario.kind === "purchasing-power" && (
-                            <span className="scenario-horizon">Horizon: variable (1–60 months)</span>
-                          )}
-                        </button>
-                      );
-                    })}
+                    {scenarios.map((scenario) => (
+                      <button className={`scenario-option ${selectedKey === scenario.key ? "scenario-option-selected" : ""}`} type="button" key={scenario.key} aria-pressed={selectedKey === scenario.key} onClick={() => selectScenario(scenario.key)}>
+                        <span className="scenario-option-topline"><strong>{scenario.label}</strong><span className="selection-indicator" aria-hidden="true">{selectedKey === scenario.key ? "✓" : ""}</span></span>
+                        <span className="scenario-description">{scenario.summary}</span>
+                        {scenario.kind === "purchasing-power" && <span className="scenario-horizon">Horizon: variable (1–60 months)</span>}
+                      </button>
+                    ))}
                   </div>
 
                   {selectedScenario ? (
                     <section className="confirmation-card" aria-labelledby="confirmation-title">
                       <div className="confirmation-heading">
-                        <div>
-                          <p className="section-kicker">Step 2 of 2</p>
-                          <h3 id="confirmation-title">Customize your scenario</h3>
-                        </div>
-                        <button className="text-button" type="button" onClick={clearSelection}>
-                          Clear
-                        </button>
+                        <div><p className="section-kicker">Step 2 of 2</p><h3 id="confirmation-title">Customize your scenario</h3></div>
+                        <button className="text-button" type="button" onClick={clearSelection}>Clear</button>
                       </div>
-
                       <div className="confirmed-scenario">
                         <strong>{selectedScenario.label}</strong>
-                        <span>
-                          {selectedScenario.kind === "purchasing-power"
-                            ? `Annual inflation: ${magnitude ?? selectedScenario.paramDefault}% · Time period: ${inflationHorizonMonths < 12 ? `${inflationHorizonMonths} month${inflationHorizonMonths === 1 ? "" : "s"}` : inflationHorizonMonths === 12 ? "1 year (12 months)" : `${(inflationHorizonMonths / 12).toFixed(inflationHorizonMonths % 12 === 0 ? 0 : 1)} years (${inflationHorizonMonths} months)`}`
-                            : `Horizon: ${selectedScenario.horizon}`}
-                        </span>
+                        {selectedScenario.kind === "purchasing-power" 
+                          ? <span>Annual inflation: {magnitude ?? selectedScenario.paramDefault}%</span>
+                          : <span>Shock timing: immediate</span>
+                        }
                       </div>
-
-                      {selectedScenario.kind === "purchasing-power" && (
-                        <p className="context-note">
-                          This is a purchasing-power illustration, not an asset-return forecast.
-                        </p>
-                      )}
-
-                      <MagnitudeControl
-                        scenario={selectedScenario}
-                        value={magnitude ?? selectedScenario.paramDefault}
-                        onChange={(v) => {
-                          setMagnitude(v);
-                          setAnalysis(null);
-                          setAnalysisError("");
-                        }}
-                      />
-
+                      {selectedScenario.kind === "purchasing-power" && <p className="context-note">This is a purchasing-power illustration, not an asset-return forecast.</p>}
+                      <MagnitudeControl scenario={selectedScenario} value={magnitude ?? selectedScenario.paramDefault} onChange={(v) => { setMagnitude(v); setAnalysis(null); setAnalysisError(""); }} />
                       {selectedScenario.kind === "purchasing-power" ? (
                         <div className="horizon-control">
-                          <label className="magnitude-label">
-                            Purchasing-power horizon
-                          </label>
+                          <label className="magnitude-label">Purchasing-power horizon</label>
                           <div className="horizon-preset-buttons">
-                            {[3, 6, 12, 36, 60].map((mo) => (
-                              <button
-                                key={mo}
-                                type="button"
-                                className={`horizon-preset-btn ${inflationHorizonMonths === mo ? "horizon-preset-btn-active" : ""}`}
-                                onClick={() => {
-                                  setInflationHorizonMonths(mo);
-                                  setAnalysis(null);
-                                  setAnalysisError("");
-                                }}
-                              >
-                                {mo < 12 ? `${mo} mo` : mo === 12 ? "1 yr" : mo === 36 ? "3 yr" : "5 yr"}
-                              </button>
-                            ))}
+                            {[3, 6, 12, 36, 60].map((mo) => <button key={mo} type="button" className={`horizon-preset-btn ${inflationHorizonMonths === mo ? "horizon-preset-btn-active" : ""}`} onClick={() => { setInflationHorizonMonths(mo); setAnalysis(null); setAnalysisError(""); }}>{mo < 12 ? `${mo} mo` : mo === 12 ? "1 yr" : mo === 36 ? "3 yr" : "5 yr"}</button>)}
                           </div>
                           <div className="magnitude-input-row" style={{marginTop: "10px"}}>
-                            <input
-                              type="range"
-                              className="magnitude-slider"
-                              id="inflation-horizon"
-                              min={1}
-                              max={60}
-                              step={1}
-                              value={inflationHorizonMonths}
-                              onChange={(e) => {
-                                setInflationHorizonMonths(parseInt(e.target.value, 10));
-                                setAnalysis(null);
-                                setAnalysisError("");
-                              }}
-                            />
+                            <input type="range" className="magnitude-slider" min={1} max={60} step={1} value={inflationHorizonMonths} onChange={(e) => { setInflationHorizonMonths(parseInt(e.target.value, 10)); setAnalysis(null); setAnalysisError(""); }} />
                             <div className="magnitude-number-wrap">
-                              <input
-                                type="number"
-                                className="magnitude-number-input"
-                                min={1}
-                                max={60}
-                                step={1}
-                                value={inflationHorizonMonths}
-                                onChange={(e) => {
-                                  const v = Math.min(60, Math.max(1, parseInt(e.target.value, 10) || 1));
-                                  setInflationHorizonMonths(v);
-                                  setAnalysis(null);
-                                  setAnalysisError("");
-                                }}
-                                aria-label="Horizon in months"
-                              />
+                              <input type="number" className="magnitude-number-input" min={1} max={60} step={1} value={inflationHorizonMonths} onChange={(e) => { const v = Math.min(60, Math.max(1, parseInt(e.target.value, 10) || 1)); setInflationHorizonMonths(v); setAnalysis(null); setAnalysisError(""); }} aria-label="Horizon in months" />
                               <span className="magnitude-unit">mo</span>
                             </div>
                           </div>
                           <div className="magnitude-range-labels"><span>1 mo</span><span>60 mo</span></div>
-                          <p className="magnitude-pp-note">
-                            Purchasing-power erosion accumulates over time. Formula: real value = nominal ÷ (1 + annual rate)^(months ÷ 12).
-                            Nominal returns, contributions, withdrawals, taxes, and fees are excluded.
-                          </p>
                         </div>
                       ) : (
-                        <div className="horizon-disabled-note">
-                          <strong>Shock timing: immediate.</strong> This scenario models an
-                          instantaneous asset-price repricing. Values are held flat afterward—no recovery, further growth, income, or additional shocks are modelled.
-                          The endpoint value is therefore the same regardless of how long you hold.
-                          A time-dependent return forecast is not implemented for this scenario type.
-                        </div>
+                        <div className="horizon-disabled-note"><strong>Shock timing: immediate.</strong> This scenario models an instantaneous asset-price repricing.</div>
                       )}
-
-                      {/* Dynamic assumption notes for inflation; static notes for other scenarios */}
-                      {selectedScenario.kind === "purchasing-power" ? (
-                        <ul className="assumption-list">
-                          {[
-                            `Nominal return is held flat at 0% for every holding over the selected period.`,
-                            `Annual inflation is assumed to be ${magnitude ?? selectedScenario.paramDefault}% throughout the selected period.`,
-                            `Purchasing power is calculated as: nominal value ÷ (1 + ${magnitude ?? selectedScenario.paramDefault}% ÷ 100)^(${inflationHorizonMonths} ÷ 12).`,
-                            `This is an illustration of real value, not a market return forecast.`,
-                            `No trading, rebalancing, taxes, or fees are modelled.`,
-                          ].map((note) => (
-                            <li key={note}>{note}</li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <ul className="assumption-list">
-                          {selectedScenario.assumptionNotes.map((note) => (
-                            <li key={note}>{note}</li>
-                          ))}
-                        </ul>
-                      )}
-
-                      <button
-                        className="primary-button"
-                        type="button"
-                        onClick={handleAnalyze}
-                        disabled={isAnalyzing || selectedScenario.metadataValid === false}
-                        aria-disabled={isAnalyzing || selectedScenario.metadataValid === false}
-                      >
-                        {isAnalyzing ? "Analyzing scenario…" : "Analyze this scenario"}
-                      </button>
-
-                      {analysisError && (
-                        <div className="error-message" role="alert">
-                          <strong>Analysis unavailable</strong>
-                          <span>{analysisError}</span>
-                          <button className="text-button" type="button" onClick={handleAnalyze}>
-                            Try again
-                          </button>
-                        </div>
-                      )}
+                      <ul className="assumption-list">
+                        {(selectedScenario.kind === "purchasing-power"
+                          ? [`Nominal return held at 0%.`, `Annual inflation: ${magnitude ?? selectedScenario.paramDefault}%.`, `This is an illustration of real value.`]
+                          : selectedScenario.assumptionNotes
+                        ).map((note) => <li key={note}>{note}</li>)}
+                      </ul>
+                      <button className="primary-button" type="button" onClick={handleAnalyze} disabled={isAnalyzing}>{isAnalyzing ? "Analyzing scenario…" : "Analyze this scenario"}</button>
+                      {analysisError && <div className="error-message" role="alert"><strong>Analysis unavailable</strong><span>{analysisError}</span><button className="text-button" type="button" onClick={handleAnalyze}>Try again</button></div>}
                     </section>
                   ) : (
-                    <div className="empty-confirmation">
-                      <span aria-hidden="true">↑</span>
-                      Select a scenario to review its exact assumptions before analysis.
-                    </div>
+                    <div className="empty-confirmation"><span aria-hidden="true">↑</span>Select a scenario to review its exact assumptions before analysis.</div>
                   )}
                 </section>
               </div>
@@ -967,54 +503,28 @@ function App() {
 
             {showComparison && (
               <div id="cmp-panel-anchor">
-                <ScenarioComparison
-                  scenarios={scenarios}
-                  customHoldings={activeAccount?.customHoldings ?? null}
-                  portfolioTotal={
-                    activeAccount?.customHoldings
-                      ? activeAccount.customHoldings.reduce((s, h) => s + h.value, 0)
-                      : 100_000
-                  }
-                  onClose={() => setShowComparison(false)}
-                />
+                <ScenarioComparison scenarios={scenarios} customHoldings={activeAccount?.customHoldings ?? null} portfolioTotal={activeAccount?.customHoldings ? activeAccount.customHoldings.reduce((s, h) => s + h.value, 0) : 100_000} onClose={() => setShowComparison(false)} />
               </div>
             )}
 
             {analysis && selectedScenario && (
               <>
                 {analysisConfigKey && analysisConfigKey !== makeConfigKey() && (
-                  <div className="stale-result-banner" role="alert">
-                    <strong>Configuration changed.</strong> The result below is from a previous
-                    run. Re-run the analysis to see updated results.
-                    <button className="text-button" type="button" onClick={handleAnalyze}>
-                      Re-run now
-                    </button>
-                  </div>
+                  <div className="stale-result-banner" role="alert"><strong>Configuration changed.</strong> Re-run the analysis to see updated results.<button className="text-button" type="button" onClick={handleAnalyze}>Re-run now</button></div>
                 )}
-                <AnalysisResults
-                  result={analysis}
-                  scenario={selectedScenario}
-                  discussState={discussState}
-                  onDiscuss={handleDiscuss}
-                  onTryAnother={handleTryAnother}
-                  onCompare={() => { setShowComparison(true); window.setTimeout(() => document.getElementById("cmp-panel-anchor")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0); }}
-                />
+                <AnalysisResults result={analysis} scenario={selectedScenario} onTryAnother={handleTryAnother} onCompare={() => { setShowComparison(true); window.setTimeout(() => document.getElementById("cmp-panel-anchor")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0); }} />
               </>
             )}
 
-            <p className="disclosure">
-              Illustrative scenario analysis based on predefined assumptions. This is not a
-              forecast or investment recommendation.
-            </p>
+            <p className="disclosure">Illustrative scenario analysis based on predefined assumptions. This is not a forecast or investment recommendation.</p>
           </>
         )}
       </main>
 
       <footer className="site-footer">
-        <span>WealthLens</span>
+        <img src={wealthLensLogo} alt="WealthLens" className="footer-logo-img" />
         <span>Demo · Synthetic data only · Not investment advice · Browser-local storage</span>
       </footer>
-
     </div>
   );
 }

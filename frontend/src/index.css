@@ -6,24 +6,143 @@
   background: #F7F8FA;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
+  color-scheme: light dark;
 
+  /* Premium financial design tokens */
+  --navy-950:           #071D33;
+  --navy-900:           #0A2540;
+  --navy-800:           #123B5D;
+  --teal-700:           #066A66;
+  --teal-600:           #087F7A;
+  --slate-900:          #182631;
+  --slate-700:          #3D4F5F;
+  --slate-600:          #5A6873;
+  --slate-400:          #8B99A6;
+  --border-light:       #D8E0E6;
+  --surface-muted:      #F4F7F8;
+  --surface-cool:       #F8FAFB;
+  --focus-blue:         #1677A6;
+
+  /* Primary text and headings */
   --color-navy:         #102B46;
+  --color-body:         #34495E;
+  --color-muted:        #5a6e7f;
+  
+  /* Accent colors */
   --color-copper:       #A65320;
   --color-copper-soft:  #fdf3ec;
   --color-copper-border:#e8c9b0;
-  --color-muted:        #5a6e7f;
-  --color-body:         #34495E;
   --color-teal:         #1a7972;
   --color-teal-dark:    #12615c;
   --color-teal-soft:    #eaf5f2;
+  
+  /* Surfaces */
   --color-white:        #FFFFFF;
   --color-surface:      #F7F8FA;
+  --color-surface-alt:  #f0f2f5;
   --color-surface-strong: #eceae3;
+  --color-card:         #FFFFFF;
+  --color-card-alt:     #f7faf8;
+  --color-nested:       #f3f6f4;
+  
+  /* Borders */
   --color-border:       #DCE3E9;
   --color-border-soft:  #e8ecf0;
   --color-border-strong:#b0bec8;
+  --color-border-teal:  #bddbd5;
+  --color-border-confirm: #cbd8d5;
+  
+  /* Status colors */
+  --color-error:        #8c3f38;
+  --color-error-soft:   #fff5f3;
+  --color-error-border: #e0b8b3;
+  --color-error-row:    #fff8f7;
+  --color-warning-soft: #fdf8ee;
+  --color-warning-border:#d4c4a0;
+  --color-warning-text: #7a5c1e;
+  --color-success-text: #12615c;
+  
+  /* Negative/positive impact */
+  --color-negative:     #8c3f38;
+  --color-negative-bar: #a95a50;
+  --color-positive:     #12615c;
+  
+  /* Chart and track backgrounds */
+  --color-track:        #f2f1ec;
+  --color-track-line:   #68767c;
+  
+  /* Button text on accent backgrounds */
+  --color-on-accent:    #FFFFFF;
+  --color-on-navy:      #FFFFFF;
+  
+  /* Placeholder text */
+  --color-placeholder:  #79858c;
 
   --font-serif: Georgia, "Times New Roman", Times, serif;
+}
+
+/* Dark theme */
+[data-theme="dark"] {
+  /* Primary text and headings - light on dark */
+  --color-navy:         #F1F5F9;
+  --color-body:         #CBD5E1;
+  --color-muted:        #94A3B8;
+  
+  /* Accent colors - brighter for dark mode */
+  --color-copper:       #FDBA74;
+  --color-copper-soft:  #2a2015;
+  --color-copper-border:#5a4528;
+  --color-teal:         #5EEAD4;
+  --color-teal-dark:    #5EEAD4;
+  --color-teal-soft:    #1a2a28;
+  
+  /* Surfaces - dark backgrounds */
+  --color-white:        #172334;
+  --color-surface:      #0F172A;
+  --color-surface-alt:  #1E293B;
+  --color-surface-strong: #334155;
+  --color-card:         #172334;
+  --color-card-alt:     #1E293B;
+  --color-nested:       #223247;
+  
+  /* Borders - subtle on dark */
+  --color-border:       #334155;
+  --color-border-soft:  #1E293B;
+  --color-border-strong:#475569;
+  --color-border-teal:  #2a4a48;
+  --color-border-confirm: #334155;
+  
+  /* Status colors - adjusted for dark */
+  --color-error:        #FCA5A5;
+  --color-error-soft:   #2a1f1e;
+  --color-error-border: #7F1D1D;
+  --color-error-row:    #2a1f1e;
+  --color-warning-soft: #2a2518;
+  --color-warning-border:#78350F;
+  --color-warning-text: #FCD34D;
+  --color-success-text: #5EEAD4;
+  
+  /* Negative/positive impact */
+  --color-negative:     #FCA5A5;
+  --color-negative-bar: #DC2626;
+  --color-positive:     #5EEAD4;
+  
+  /* Chart and track backgrounds */
+  --color-track:        #1E293B;
+  --color-track-line:   #64748B;
+  
+  /* Button text on accent backgrounds */
+  --color-on-accent:    #0F172A;
+  --color-on-navy:      #0F172A;
+  
+  /* Placeholder text */
+  --color-placeholder:  #64748B;
+}
+
+[data-theme="dark"] body,
+[data-theme="dark"] html {
+  background: #0F172A;
+  color: var(--color-body);
 }
 
 * {

@@ -1,17 +1,11 @@
+import { useState } from "react";
 import type { AnalysisResult, ScenarioDefinition } from "../types";
 import { HoldingContributions } from "./HoldingContributions";
 import { TimelineCards } from "./TimelineCards";
 
-interface DiscussState {
-  status: "idle" | "saving" | "saved" | "error";
-  error: string;
-}
-
 interface AnalysisResultsProps {
   result: AnalysisResult;
   scenario: ScenarioDefinition;
-  discussState: DiscussState;
-  onDiscuss: () => void;
   onTryAnother: () => void;
   onCompare?: () => void;
 }
@@ -39,9 +33,7 @@ function explanationSourceLabel(source: AnalysisResult["explanationSource"]): st
   return "Explanation (source unconfirmed)";
 }
 
-/** Extract up to 3 sentence-level driver bullets from the explanation text. */
 function extractDrivers(explanation: string): string[] {
-  // Split on sentence boundaries, take first 3 non-trivial sentences
   return explanation
     .split(/(?<=[.!?])\s+/)
     .map((s) => s.trim())
@@ -52,20 +44,11 @@ function extractDrivers(explanation: string): string[] {
 export function AnalysisResults({
   result,
   scenario,
-  discussState,
-  onDiscuss,
   onTryAnother,
   onCompare,
 }: AnalysisResultsProps) {
+  const [discussClicked, setDiscussClicked] = useState(false);
   const isPurchasingPower = result.kind === "purchasing-power";
-
-  const discussButtonLabel =
-    discussState.status === "saving"
-      ? "Saving request…"
-      : discussState.status === "saved"
-        ? "Discussion request created"
-        : "Discuss with my advisor";
-
   const drivers = extractDrivers(result.explanation);
 
   return (
@@ -90,14 +73,12 @@ export function AnalysisResults({
         <span className="result-status">Analysis complete</span>
       </div>
 
-      {/* ── Concise numerical summary ── */}
       {isPurchasingPower ? (
         <>
           <div className="inflation-notice">
             <strong>Purchasing-power illustration</strong>
             <span>This is not an asset-return forecast or an investment loss.</span>
           </div>
-
           <div className="result-summary-banner">
             <span className="summary-label">Purchasing-power change</span>
             <strong className="summary-number number-negative">
@@ -108,7 +89,6 @@ export function AnalysisResults({
               Nominal value held at {wholeDollar.format(result.nominalValue ?? 0)}
             </span>
           </div>
-
           <div className="result-metrics result-metrics-inflation">
             <div className="metric">
               <span>Nominal portfolio value</span>
@@ -137,7 +117,6 @@ export function AnalysisResults({
         </>
       ) : (
         <>
-          {/* Single-line headline summary */}
           <div className="result-summary-banner">
             <span className="summary-label">Portfolio impact</span>
             <strong className={`summary-number ${(result.impactDollars ?? 0) < 0 ? "number-negative" : "number-positive"}`}>
@@ -148,7 +127,6 @@ export function AnalysisResults({
               {wholeDollar.format(result.currentValue ?? 0)} → {wholeDollar.format(result.scenarioValue ?? 0)}
             </span>
           </div>
-
           <div className="result-metrics">
             <div className="metric">
               <span>Current portfolio value</span>
@@ -166,88 +144,55 @@ export function AnalysisResults({
               <small>{signedPercent(result.impactPercent ?? 0)}</small>
             </div>
           </div>
-
           {result.holdings && <HoldingContributions holdings={result.holdings} />}
         </>
       )}
 
-      {/* ── Key drivers ── */}
       {drivers.length > 0 && (
         <section className="drivers-section" aria-labelledby="drivers-title">
           <h3 id="drivers-title" className="drivers-heading">Key drivers</h3>
           <ul className="drivers-list">
-            {drivers.map((d, i) => (
-              <li key={i}>{d}</li>
-            ))}
+            {drivers.map((d, i) => <li key={i}>{d}</li>)}
           </ul>
-          <span className="explanation-source">
-            {explanationSourceLabel(result.explanationSource)}
-          </span>
+          <span className="explanation-source">{explanationSourceLabel(result.explanationSource)}</span>
         </section>
       )}
 
-      {/* ── Timeline cards ── */}
       <TimelineCards result={result} scenario={scenario} />
 
-      {/* ── Expandable assumptions & methodology ── */}
       <details className="assumptions-details">
         <summary>Assumptions &amp; methodology</summary>
         <div>
           <p><strong>Scenario:</strong> {scenario.label}</p>
           <p><strong>Horizon:</strong> {result.horizon}</p>
-          {result.inflationRatePercent != null && (
-            <p><strong>Annual inflation rate:</strong> {result.inflationRatePercent}%</p>
-          )}
+          {result.inflationRatePercent != null && <p><strong>Annual inflation rate:</strong> {result.inflationRatePercent}%</p>}
           <p><strong>Magnitude:</strong> {scenario.magnitudeLabel}</p>
-          <ul>
-            {scenario.assumptionNotes.map((note) => (
-              <li key={note}>{note}</li>
-            ))}
-          </ul>
-          <p className="assumptions-version">
-            Assumptions version: {result.assumptionsVersion}
-          </p>
+          <ul>{scenario.assumptionNotes.map((note) => <li key={note}>{note}</li>)}</ul>
+          <p className="assumptions-version">Assumptions version: {result.assumptionsVersion}</p>
         </div>
       </details>
 
       <div className="result-actions">
-        <button className="secondary-button" type="button" onClick={onTryAnother}>
-          Try another scenario
-        </button>
-        {onCompare && (
-          <button className="secondary-button" type="button" onClick={onCompare}>
-            Compare scenarios
-          </button>
-        )}
+        <button className="secondary-button" type="button" onClick={onTryAnother}>Try another scenario</button>
+        {onCompare && <button className="secondary-button" type="button" onClick={onCompare}>Compare scenarios</button>}
         <button
           className="primary-button"
           type="button"
-          onClick={onDiscuss}
-          disabled={discussState.status === "saving" || discussState.status === "saved"}
+          onClick={() => setDiscussClicked(true)}
+          disabled={discussClicked}
         >
-          {discussButtonLabel}
+          {discussClicked ? "Request sent" : "Discuss with my advisor"}
         </button>
       </div>
 
-      {discussState.status === "saved" && (
+      {discussClicked && (
         <p className="advisor-success-note" role="status">
-          Discussion request created. Switch to Advisor view to see it.
+          Request forwarded to your advisor's LPL Financial workspace.
         </p>
       )}
 
-      {discussState.status === "error" && (
-        <div className="error-message" role="alert">
-          <strong>Request could not be saved</strong>
-          <span>{discussState.error}</span>
-          <button className="text-button" type="button" onClick={onDiscuss}>
-            Try again
-          </button>
-        </div>
-      )}
-
       <p className="disclosure">
-        Illustrative scenario analysis based on predefined assumptions. This is not a
-        forecast or investment recommendation.
+        Illustrative scenario analysis based on predefined assumptions. This is not a forecast or investment recommendation.
       </p>
     </section>
   );
