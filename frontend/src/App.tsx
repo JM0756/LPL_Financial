@@ -20,7 +20,6 @@ import { AccountManager } from "./components/AccountManager";
 import { AdvisorView } from "./components/AdvisorView";
 import { AnalysisResults } from "./components/AnalysisResults";
 import { AuthGate } from "./components/AuthGate";
-import { DevDiagnostics } from "./components/DevDiagnostics";
 import { MagnitudeControl } from "./components/MagnitudeControl";
 import { PortfolioPage } from "./components/PortfolioPage";
 import { ProfileManager } from "./components/ProfileManager";
@@ -792,9 +791,9 @@ function App() {
                             </span>
                           </span>
                           <span className="scenario-description">{scenario.summary}</span>
-                          <span className="scenario-horizon">
-                              {scenario.kind === "purchasing-power" ? "Horizon: variable (1–60 months)" : `Horizon: ${scenario.horizon}`}
-                            </span>
+                          {scenario.kind === "purchasing-power" && (
+                            <span className="scenario-horizon">Horizon: variable (1–60 months)</span>
+                          )}
                         </button>
                       );
                     })}
@@ -1002,9 +1001,6 @@ function App() {
         <span>Demo · Synthetic data only · Not investment advice · Browser-local storage</span>
       </footer>
 
-      {import.meta.env.DEV && (
-        <DevDiagnostics scenarios={scenarios} isLoading={isLoading} loadError={loadError} />
-      )}
     </div>
   );
 }

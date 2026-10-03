@@ -1,5 +1,6 @@
 /**
  * Focused tests for inflation scenario adapter and metadata validation.
+ * Tests use the actual API response shape: top-level param_default/param_min/param_max/param_step.
  * Run with: node src/tests/inflation-adapter.test.mjs
  */
 
@@ -51,8 +52,35 @@ function ppFormula(nominal, annualRatePct, months) {
   return nominal / Math.pow(1 + annualRatePct / 100, months / 12);
 }
 
-// --- metadata validation ---
-console.log("\nTest group: metadata validation");
+// --- actual API response shape (top-level param_* fields) ---
+console.log("\nTest group: actual API response shape (top-level param_* fields)");
+
+// These objects mirror what scenario_catalog() now emits after the fix.
+const apiShapeFixtures = [
+  { scenario_key: "market_crash",          valuation_basis: "nominal_market_value",  param_label: "Market decline (%)",                  param_unit: "percent",            param_default: 20.0, param_min: 1.0,   param_max: 60.0,  param_step: 1.0  },
+  { scenario_key: "oil_shock",             valuation_basis: "nominal_market_value",  param_label: "Crude oil price increase (%)",         param_unit: "percent",            param_default: 40.0, param_min: 5.0,   param_max: 150.0, param_step: 5.0  },
+  { scenario_key: "inflation",             valuation_basis: "real_purchasing_power", param_label: "Annual inflation rate (%)",            param_unit: "percent",            param_default: 5.0,  param_min: 0.0,   param_max: 15.0,  param_step: 0.5  },
+  { scenario_key: "rate_rise",             valuation_basis: "nominal_market_value",  param_label: "Rate increase (percentage points)",    param_unit: "percentage_points",  param_default: 1.0,  param_min: 0.25,  param_max: 5.0,   param_step: 0.25 },
+  { scenario_key: "tech_downturn",         valuation_basis: "nominal_market_value",  param_label: "Technology sector decline (%)",        param_unit: "percent",            param_default: 30.0, param_min: 5.0,   param_max: 80.0,  param_step: 5.0  },
+  { scenario_key: "international_downturn",valuation_basis: "nominal_market_value",  param_label: "International equity decline (%)",     param_unit: "percent",            param_default: 20.0, param_min: 5.0,   param_max: 60.0,  param_step: 5.0  },
+];
+
+for (const raw of apiShapeFixtures) {
+  const adapted = adaptScenarioDefinition(raw);
+  assert(adapted.metadataValid === true, `${raw.scenario_key}: top-level param_* fields -> metadataValid=true`);
+  assert(adapted.paramDefault === raw.param_default, `${raw.scenario_key}: paramDefault=${raw.param_default}`);
+  assert(adapted.paramMin === raw.param_min, `${raw.scenario_key}: paramMin=${raw.param_min}`);
+  assert(adapted.paramMax === raw.param_max, `${raw.scenario_key}: paramMax=${raw.param_max}`);
+  assert(adapted.paramStep === raw.param_step, `${raw.scenario_key}: paramStep=${raw.param_step}`);
+}
+
+// Verify nested "parameters" object (old broken shape) does NOT produce valid metadata
+console.log("\nTest group: old nested shape must NOT pass validation");
+const oldBrokenShape = { scenario_key: "international_downturn", valuation_basis: "nominal_market_value", parameters: { default: 20, min: 15, max: 25, step: 1 } };
+assert(adaptScenarioDefinition(oldBrokenShape).metadataValid === false, "nested parameters object -> metadataValid=false (old broken shape)");
+
+// --- metadata validation edge cases ---
+console.log("\nTest group: metadata validation edge cases");
 
 const inf = adaptScenarioDefinition({ scenario_key: "inflation", valuation_basis: "real_purchasing_power", param_default: 5.0, param_min: 0.0, param_max: 15.0, param_step: 0.5 });
 assert(inf.metadataValid === true, "inflation param_min=0 accepted (metadataValid=true)");
@@ -65,20 +93,6 @@ assert(adaptScenarioDefinition({ scenario_key: "x", param_default: 5, param_min:
 assert(adaptScenarioDefinition({ scenario_key: "x", param_default: 5, param_min: 0, param_max: Infinity, param_step: 1 }).metadataValid === false, "Infinity param_max -> false");
 assert(adaptScenarioDefinition({ scenario_key: "x", param_default: 5, param_min: 0, param_max: 15, param_step: 0 }).metadataValid === false, "param_step=0 -> false");
 assert(adaptScenarioDefinition({ scenario_key: "x", param_default: 20, param_min: 0, param_max: 15, param_step: 1 }).metadataValid === false, "default > max -> false");
-
-// --- all six scenarios ---
-console.log("\nTest group: all six scenario metadata");
-const six = [
-  { scenario_key: "market_crash", valuation_basis: "nominal_market_value", param_default: 20, param_min: 1, param_max: 60, param_step: 1 },
-  { scenario_key: "oil_shock", valuation_basis: "nominal_market_value", param_default: 40, param_min: 5, param_max: 150, param_step: 5 },
-  { scenario_key: "inflation", valuation_basis: "real_purchasing_power", param_default: 5, param_min: 0, param_max: 15, param_step: 0.5 },
-  { scenario_key: "rate_rise", valuation_basis: "nominal_market_value", param_default: 1, param_min: 0.25, param_max: 5, param_step: 0.25 },
-  { scenario_key: "tech_downturn", valuation_basis: "nominal_market_value", param_default: 30, param_min: 5, param_max: 80, param_step: 5 },
-  { scenario_key: "international_downturn", valuation_basis: "nominal_market_value", param_default: 20, param_min: 5, param_max: 60, param_step: 5 },
-];
-for (const raw of six) {
-  assert(adaptScenarioDefinition(raw).metadataValid === true, `${raw.scenario_key} metadataValid=true`);
-}
 
 // --- analysis result adapter ---
 console.log("\nTest group: analysis result adapter");

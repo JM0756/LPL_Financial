@@ -532,7 +532,7 @@ def scenario_catalog() -> list[dict]:
     """Preset catalogue — also used to 'offer the available preset' on mismatch."""
     out = []
     for s in SCENARIOS.values():
-        params = _SCENARIO_PARAMS.get(s.key, {})
+        params = _SCENARIO_PARAMS[s.key]
         out.append(
             {
                 "scenario_key": s.key,
@@ -544,15 +544,15 @@ def scenario_catalog() -> list[dict]:
                 "valuation_basis": s.valuation_basis,
                 "assumptions_version": ASSUMPTIONS_VERSION,
                 "assumption_notes": list(s.assumption_notes),
-                # Editable parameter metadata
-                "param_label": params.get("param_label", ""),
-                "param_unit": params.get("param_unit", "percent"),
-                "param_default": params.get("default_value", float(s.headline_magnitude * 100)),
-                "param_min": params.get("min_value", 0.0),
-                "param_max": params.get("max_value", 100.0),
-                "param_step": params.get("step", 1.0),
-                "param_methodology": params.get("methodology", ""),
                 "baseline_magnitude": float(s.headline_magnitude),
+                # Top-level param_* fields consumed by the frontend adapter
+                "param_label": params["param_label"],
+                "param_unit": params["param_unit"],
+                "param_default": params["default_value"],
+                "param_min": params["min_value"],
+                "param_max": params["max_value"],
+                "param_step": params["step"],
+                "param_methodology": params["methodology"],
             }
         )
     return out
