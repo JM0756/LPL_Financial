@@ -16,6 +16,9 @@ import {
 interface PortfolioPageProps {
   account: DemoAccount;
   onSave: () => void;
+  onDirtyChange?: (dirty: boolean) => void;
+  saveRequested?: boolean;
+  onExplore?: () => void;
 }
 
 const currencyFormatter = new Intl.NumberFormat("en-US", {
@@ -61,7 +64,7 @@ function savedValuesToDrafts(account: DemoAccount): Record<HoldingId, string> {
   ) as Record<HoldingId, string>;
 }
 
-export function PortfolioPage({ account, onSave }: PortfolioPageProps) {
+export function PortfolioPage({ account, onSave, onDirtyChange, saveRequested, onExplore }: PortfolioPageProps) {
   // drafts: local string state while editing — never auto-formatted while typing
   const [drafts, setDrafts] = useState<Record<HoldingId, string>>(() =>
     savedValuesToDrafts(account),
@@ -83,21 +86,25 @@ export function PortfolioPage({ account, onSave }: PortfolioPageProps) {
     setFormError("");
     setSaved(false);
     setIsDirty(false);
+    onDirtyChange?.(false);
   }, [account.id]);
+
+  // When parent requests a save (e.g. from unsaved guard), trigger save
+  useEffect(() => {
+    if (saveRequested) handleSave();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [saveRequested]);
 
   const isCustom = account.customHoldings !== null;
 
   function handleChange(id: HoldingId, raw: string) {
-    // Accept the raw string as-is while typing.
-    // Only strip characters that can never be part of a valid dollar amount.
-    // Allow: digits, dot, comma, leading $
     const cleaned = raw.replace(/[^0-9.,$ ]/g, "");
     setDrafts((prev) => ({ ...prev, [id]: cleaned }));
-    // Clear field error as user types
     setFieldErrors((prev) => ({ ...prev, [id]: undefined }));
     setFormError("");
     setSaved(false);
     setIsDirty(true);
+    onDirtyChange?.(true);
   }
 
   function handleFocus(id: HoldingId, e: React.FocusEvent<HTMLInputElement>) {
@@ -148,6 +155,7 @@ export function PortfolioPage({ account, onSave }: PortfolioPageProps) {
     setIsDirty(false);
     setFormError("");
     setFieldErrors({});
+    onDirtyChange?.(false);
     onSave();
   }
 
@@ -157,6 +165,7 @@ export function PortfolioPage({ account, onSave }: PortfolioPageProps) {
     setFormError("");
     setSaved(false);
     setIsDirty(false);
+    onDirtyChange?.(false);
   }
 
   function handleReset() {
@@ -275,6 +284,22 @@ export function PortfolioPage({ account, onSave }: PortfolioPageProps) {
         Supported categories: {SUPPORTED_HOLDING_IDS.join(", ")}. The backend calculates
         all totals, weights, and scenario impacts from the submitted holdings.
       </p>
+
+      {onExplore && (
+        <div className="portfolio-explore-cta">
+          <button
+            className="primary-button"
+            type="button"
+            onClick={onExplore}
+            disabled={isDirty}
+          >
+            Explore scenarios →
+          </button>
+          {isDirty && (
+            <p className="portfolio-explore-hint">Save your changes first to use them in analysis.</p>
+          )}
+        </div>
+      )}
     </section>
   );
 }

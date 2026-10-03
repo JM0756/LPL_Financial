@@ -46,8 +46,9 @@ export const scenarioFixtures: ScenarioDefinition[] = [
     paramMin: 1.0,
     paramMax: 60.0,
     paramStep: 1.0,
-    paramMethodology: "Linear sensitivity scaling.",
+    paramMethodology: "Holding impacts scale in proportion to the selected scenario severity, using predefined illustrative sensitivities. This is not a forecast.",
     baselineMagnitude: 0.2,
+    metadataValid: true,
   },
   {
     key: "oil_shock",
@@ -73,8 +74,9 @@ export const scenarioFixtures: ScenarioDefinition[] = [
     paramMin: 5.0,
     paramMax: 150.0,
     paramStep: 5.0,
-    paramMethodology: "Linear sensitivity scaling.",
+    paramMethodology: "Holding impacts scale in proportion to the selected scenario severity, using predefined illustrative sensitivities. This is not a forecast.",
     baselineMagnitude: 0.4,
+    metadataValid: true,
   },
   {
     key: "inflation",
@@ -99,8 +101,9 @@ export const scenarioFixtures: ScenarioDefinition[] = [
     paramMin: 0.0,
     paramMax: 15.0,
     paramStep: 0.5,
-    paramMethodology: "Purchasing-power illustration.",
+    paramMethodology: "Purchasing-power illustration: nominal portfolio value is held flat at 0% return. Real value = nominal ÷ (1 + annual rate)^(months ÷ 12). This is not an asset-return forecast.",
     baselineMagnitude: 0.05,
+    metadataValid: true,
   },
   {
     key: "rate_rise",
@@ -126,8 +129,9 @@ export const scenarioFixtures: ScenarioDefinition[] = [
     paramMin: 0.25,
     paramMax: 5.0,
     paramStep: 0.25,
-    paramMethodology: "Linear sensitivity scaling.",
+    paramMethodology: "Holding impacts scale in proportion to the selected scenario severity, using predefined illustrative sensitivities. This is not a forecast.",
     baselineMagnitude: 0.01,
+    metadataValid: true,
   },
   {
     key: "tech_downturn",
@@ -153,8 +157,9 @@ export const scenarioFixtures: ScenarioDefinition[] = [
     paramMin: 5.0,
     paramMax: 80.0,
     paramStep: 5.0,
-    paramMethodology: "Linear sensitivity scaling.",
+    paramMethodology: "Holding impacts scale in proportion to the selected scenario severity, using predefined illustrative sensitivities. This is not a forecast.",
     baselineMagnitude: 0.3,
+    metadataValid: true,
   },
   {
     key: "international_downturn",
@@ -179,8 +184,9 @@ export const scenarioFixtures: ScenarioDefinition[] = [
     paramMin: 5.0,
     paramMax: 60.0,
     paramStep: 5.0,
-    paramMethodology: "Linear sensitivity scaling.",
+    paramMethodology: "Holding impacts scale in proportion to the selected scenario severity, using predefined illustrative sensitivities. This is not a forecast.",
     baselineMagnitude: 0.2,
+    metadataValid: true,
   },
 ];
 
@@ -245,6 +251,7 @@ export const analysisFixtures: Record<string, AnalysisResult> = {
     purchasingPowerValue: 95_238.10,
     purchasingPowerChangeDollars: -4_761.90,
     purchasingPowerChangePercent: -4.76,
+    inflationRatePercent: 5.0,
     explanation: "Nominal value is deliberately held flat, so the change you see comes entirely from the assumed rise in the price level rather than from any market move. Every holding is held flat in nominal terms by construction. The same balance simply buys less after a year of rising prices. This is a hypothetical illustration produced from a fixed assumption set, not a forecast.",
     explanationSource: "backend-standard",
   },

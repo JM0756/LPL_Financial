@@ -5,6 +5,9 @@ const base = "/ports/5176/";
 
 export default defineConfig({
   base,
+  define: {
+    global: "globalThis",
+  },
   plugins: [
     {
       name: "workshop-port-routing",

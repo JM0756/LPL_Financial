@@ -13,11 +13,12 @@ from __future__ import annotations
 
 import logging
 
-from fastapi import Body, FastAPI, HTTPException, Query
+from fastapi import Body, Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from . import __version__
+from .auth import get_identity, require_advisor, VerifiedIdentity
 from .bedrock_service import STATUS_MATCHED, get_bedrock_service
 from .config import get_settings
 from .engine import (
@@ -30,7 +31,7 @@ from .engine import (
     to_jsonable,
 )
 from .scenarios import ASSUMPTIONS_VERSION, ENGINE_VERSION, SCENARIO_KEYS, SYNTHETIC_CLIENT_ID
-from .storage import AnalysisNotFoundError, IdempotencyConflictError, VALID_STATUSES, get_storage
+from .storage import AnalysisNotFoundError, IdempotencyConflictError, VALID_STATUSES, get_storage, reset_memory_store
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s :: %(message)s")
 logger = logging.getLogger("scenariocraft")
@@ -160,7 +161,7 @@ def interpret(payload: InterpretRequest) -> dict:
 # 3) Analyze
 # --------------------------------------------------------------------------- #
 @app.post("/api/analyze", tags=["analysis"])
-def analyze(payload: AnalyzeRequest) -> dict:
+def analyze(payload: AnalyzeRequest, identity: VerifiedIdentity = Depends(get_identity)) -> dict:
     if not payload.confirmed:
         raise HTTPException(
             status_code=400,
@@ -328,6 +329,7 @@ def list_discussions(
     client_id: str = Query(default=SYNTHETIC_CLIENT_ID),
     limit: int = Query(default=50, ge=1, le=200),
     status: str | None = Query(default=None),
+    identity: VerifiedIdentity = Depends(get_identity),
 ) -> dict:
     """Advisor View feed: requests plus the saved scenario details for each."""
     items = get_storage().list_discussions(client_id=client_id, limit=limit)
@@ -383,7 +385,7 @@ def list_discussions(
 
 
 @app.patch("/api/discussions/{discussion_id}", tags=["discussions"])
-def update_discussion(discussion_id: str, payload: DiscussionStatusUpdate) -> dict:
+def update_discussion(discussion_id: str, payload: DiscussionStatusUpdate, identity: VerifiedIdentity = Depends(require_advisor)) -> dict:
     try:
         record = get_storage().update_discussion_status(discussion_id, payload.status)
     except ValueError as exc:
@@ -391,6 +393,23 @@ def update_discussion(discussion_id: str, payload: DiscussionStatusUpdate) -> di
     if record is None:
         raise HTTPException(status_code=404, detail={"error": "discussion_not_found", "discussion_id": discussion_id})
     return to_jsonable(record)
+
+
+@app.delete("/api/discussions", tags=["discussions"])
+def reset_discussions() -> dict:
+    """
+    Clear all in-memory discussion and analysis records.
+    Only affects the memory backend — safe to call when DynamoDB is not configured.
+    Returns a count of cleared records.
+    """
+    storage = get_storage()
+    if storage.backend == "dynamodb":
+        raise HTTPException(
+            status_code=403,
+            detail={"error": "not_allowed", "message": "Reset is only available in memory mode."},
+        )
+    result = reset_memory_store()
+    return {"status": "cleared", **result, "storage_backend": storage.backend}
 
 
 @app.on_event("startup")

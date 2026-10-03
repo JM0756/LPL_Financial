@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@aws-sdk/client-cognito-identity-provider": "^3.1146.0",
+    "amazon-cognito-identity-js": "^6.3.20",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },

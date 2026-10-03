@@ -1,5 +1,6 @@
 import type { AnalysisResult, ScenarioDefinition } from "../types";
 import { HoldingContributions } from "./HoldingContributions";
+import { TimelineCards } from "./TimelineCards";
 
 interface DiscussState {
   status: "idle" | "saving" | "saved" | "error";
@@ -12,6 +13,7 @@ interface AnalysisResultsProps {
   discussState: DiscussState;
   onDiscuss: () => void;
   onTryAnother: () => void;
+  onCompare?: () => void;
 }
 
 const wholeDollar = new Intl.NumberFormat("en-US", {
@@ -53,6 +55,7 @@ export function AnalysisResults({
   discussState,
   onDiscuss,
   onTryAnother,
+  onCompare,
 }: AnalysisResultsProps) {
   const isPurchasingPower = result.kind === "purchasing-power";
 
@@ -78,8 +81,10 @@ export function AnalysisResults({
           <h2 id="results-title">{result.label}</h2>
           <p>
             {result.horizonType === "immediate_shock"
-              ? "Immediate shock · " + result.horizon + " stored horizon"
-              : "Horizon: " + result.horizon}
+              ? "Immediate asset-price shock"
+              : result.inflationRatePercent != null
+                ? `Purchasing-power illustration · ${result.inflationRatePercent}% annual inflation · ${result.horizon}`
+                : `Purchasing-power illustration · Horizon: ${result.horizon}`}
           </p>
         </div>
         <span className="result-status">Analysis complete</span>
@@ -113,7 +118,11 @@ export function AnalysisResults({
             <div className="metric metric-emphasis">
               <span>Purchasing power in today's dollars</span>
               <strong>{twoCents.format(result.purchasingPowerValue ?? 0)}</strong>
-              <small>After assumed 5% inflation</small>
+              <small>
+                {result.inflationRatePercent != null
+                  ? `After ${result.inflationRatePercent}% annual inflation over ${result.horizon}`
+                  : `After assumed inflation over ${result.horizon}`}
+              </small>
             </div>
             <div className="metric">
               <span>Purchasing-power change</span>
@@ -177,12 +186,18 @@ export function AnalysisResults({
         </section>
       )}
 
+      {/* ── Timeline cards ── */}
+      <TimelineCards result={result} scenario={scenario} />
+
       {/* ── Expandable assumptions & methodology ── */}
       <details className="assumptions-details">
         <summary>Assumptions &amp; methodology</summary>
         <div>
           <p><strong>Scenario:</strong> {scenario.label}</p>
           <p><strong>Horizon:</strong> {result.horizon}</p>
+          {result.inflationRatePercent != null && (
+            <p><strong>Annual inflation rate:</strong> {result.inflationRatePercent}%</p>
+          )}
           <p><strong>Magnitude:</strong> {scenario.magnitudeLabel}</p>
           <ul>
             {scenario.assumptionNotes.map((note) => (
@@ -199,6 +214,11 @@ export function AnalysisResults({
         <button className="secondary-button" type="button" onClick={onTryAnother}>
           Try another scenario
         </button>
+        {onCompare && (
+          <button className="secondary-button" type="button" onClick={onCompare}>
+            Compare scenarios
+          </button>
+        )}
         <button
           className="primary-button"
           type="button"

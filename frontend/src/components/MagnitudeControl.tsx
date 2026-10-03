@@ -7,10 +7,28 @@ interface MagnitudeControlProps {
 }
 
 export function MagnitudeControl({ scenario, value, onChange }: MagnitudeControlProps) {
-  const { paramLabel, paramUnit, paramMin, paramMax, paramStep, paramMethodology } = scenario;
+  const { paramLabel, paramUnit, paramMin, paramMax, paramStep, paramMethodology, metadataValid } = scenario;
+
+  // Guard: if metadata is missing or invalid, show a configuration error
+  if (metadataValid === false) {
+    return (
+      <div className="magnitude-config-error" role="alert">
+        <strong>Configuration error</strong>
+        <span>
+          Required parameter metadata (default, min, max, step) is missing for this scenario.
+          Analysis is disabled until the backend provides valid configuration.
+        </span>
+      </div>
+    );
+  }
 
   const isDefault = value === scenario.paramDefault;
   const unitSuffix = paramUnit === "percentage_points" ? " pp" : "%";
+
+  // Canonical methodology text: use backend value if substantive, else standard fallback
+  const methodologyText = paramMethodology && paramMethodology.trim().length > 20
+    ? paramMethodology
+    : "Holding impacts scale in proportion to the selected scenario severity, using predefined illustrative sensitivities. This is not a forecast.";
 
   function handleSlider(e: React.ChangeEvent<HTMLInputElement>) {
     onChange(parseFloat(e.target.value));
@@ -80,9 +98,17 @@ export function MagnitudeControl({ scenario, value, onChange }: MagnitudeControl
         </p>
       )}
 
-      <details className="magnitude-methodology">
+      {!isDefault && (
+        <p className="magnitude-customized-note">
+          <strong>Note:</strong> The assumption bullets below describe the baseline scenario.
+          Your selected severity ({value}{unitSuffix}) scales all holding impacts proportionally.
+          Re-run analysis to see results for this configuration.
+        </p>
+      )}
+
+      <details className="magnitude-methodology" open={false}>
         <summary>Sensitivity methodology</summary>
-        <p>{paramMethodology}</p>
+        <p>{methodologyText}</p>
       </details>
     </div>
   );

@@ -59,6 +59,8 @@ export interface ScenarioDefinition {
   paramStep: number;
   paramMethodology: string;
   baselineMagnitude: number;
+  /** False if required parameter metadata was missing from the backend response */
+  metadataValid?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -104,6 +106,8 @@ export interface AnalysisResult {
   purchasingPowerValue?: number;
   purchasingPowerChangeDollars?: number;
   purchasingPowerChangePercent?: number;
+  /** Annual inflation rate percent used in the calculation, e.g. 5.0 means 5% */
+  inflationRatePercent?: number;
 }
 
 // ---------------------------------------------------------------------------

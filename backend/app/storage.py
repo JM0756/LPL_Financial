@@ -483,3 +483,19 @@ def reset_storage_for_tests() -> None:
     _MEM_ADVISOR_QUESTIONS.clear()
     _MEM_IDEMPOTENCY.clear()
 
+
+def reset_memory_store() -> dict:
+    """
+    Clear the in-process memory store and return a summary.
+    Only operates on the memory backend — does nothing when DynamoDB is active
+    so there is no risk of wiping durable data.
+    """
+    analyses = len(_MEM_ANALYSES)
+    discussions = len(_MEM_DISCUSSIONS)
+    questions = len(_MEM_ADVISOR_QUESTIONS)
+    _MEM_ANALYSES.clear()
+    _MEM_DISCUSSIONS.clear()
+    _MEM_ADVISOR_QUESTIONS.clear()
+    _MEM_IDEMPOTENCY.clear()
+    return {"cleared": {"analyses": analyses, "discussions": discussions, "advisor_questions": questions}}
+

@@ -9,12 +9,22 @@ import {
   getScenarios,
   interpretQuestion,
 } from "./api";
+import {
+  AUTH_ENABLED,
+  clearSession,
+  getStoredSession,
+  refreshSession,
+  type StoredSession,
+} from "./auth";
 import { AccountManager } from "./components/AccountManager";
 import { AdvisorView } from "./components/AdvisorView";
 import { AnalysisResults } from "./components/AnalysisResults";
+import { AuthGate } from "./components/AuthGate";
+import { DevDiagnostics } from "./components/DevDiagnostics";
 import { MagnitudeControl } from "./components/MagnitudeControl";
 import { PortfolioPage } from "./components/PortfolioPage";
 import { ProfileManager } from "./components/ProfileManager";
+import { ScenarioComparison } from "./components/ScenarioComparison";
 import {
   getActiveAccount,
   getActiveProfile,
@@ -46,9 +56,27 @@ const HOLDING_COLORS = [
 ];
 
 type DiscussState = { status: "idle" | "saving" | "saved" | "error"; error: string };
-type NavTab = "explore" | "portfolio" | "advisor";
+type NavTab = "explore" | "portfolio";
+type UnsavedGuardAction = "save" | "discard" | "stay";
 
 function App() {
+  // --- auth state (only active when AUTH_ENABLED) ---
+  const [authSession, setAuthSession] = useState<StoredSession | null>(() =>
+    AUTH_ENABLED ? getStoredSession() : null
+  );
+
+  // Attempt silent refresh on mount when auth is enabled
+  useEffect(() => {
+    if (!AUTH_ENABLED) return;
+    if (authSession) return; // already have a session
+    refreshSession().then((s) => { if (s) setAuthSession(s); });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function handleSignOut() {
+    clearSession();
+    setAuthSession(null);
+  }
+
   // --- profile/account state ---
   const [activeProfile, setActiveProfile] = useState<DemoProfile | null>(() => getActiveProfile());
   const [activeAccount, setActiveAccount] = useState<DemoAccount | null>(() => getActiveAccount());
@@ -61,6 +89,10 @@ function App() {
 
   // --- nav ---
   const [navTab, setNavTab] = useState<NavTab>("explore");
+  const [isAdvisorMode, setIsAdvisorMode] = useState(false);
+  // Guard: pending nav when Holdings has unsaved edits
+  const [pendingNav, setPendingNav] = useState<NavTab | null>(null);
+  const [portfolioIsDirty, setPortfolioIsDirty] = useState(false);
 
   // --- scenario selection ---
   const [selectedKey, setSelectedKey] = useState<ScenarioKey | null>(null);
@@ -85,6 +117,9 @@ function App() {
     return `${selectedKey}|${magnitude ?? "default"}|${inflationHorizonMonths}|${holdingsKey}`;
   }
 
+  // --- comparison ---
+  const [showComparison, setShowComparison] = useState(false);
+
   // --- discuss ---
   const [discussState, setDiscussState] = useState<DiscussState>({ status: "idle", error: "" });
 
@@ -99,11 +134,33 @@ function App() {
   const refreshDemoState = useCallback(() => {
     setActiveProfile(getActiveProfile());
     setActiveAccount(getActiveAccount());
-    // Invalidate analysis when account changes
     setAnalysis(null);
     setAnalysisError("");
     setDiscussState({ status: "idle", error: "" });
   }, []);
+
+  // Navigate to a tab, guarding against unsaved Holdings edits
+  function requestNavTo(tab: NavTab) {
+    if (navTab === "portfolio" && portfolioIsDirty) {
+      setPendingNav(tab);
+    } else {
+      setNavTab(tab);
+    }
+  }
+
+  function handleGuardAction(action: UnsavedGuardAction) {
+    if (action === "stay" || !pendingNav) {
+      setPendingNav(null);
+      return;
+    }
+    if (action === "discard") {
+      setPortfolioIsDirty(false);
+      setNavTab(pendingNav);
+      setPendingNav(null);
+    }
+    // "save" is handled by PortfolioPage calling onSave which sets isDirty=false
+    // then we navigate
+  }
 
   // ---------------------------------------------------------------------------
   // Load portfolio + scenarios on mount
@@ -291,9 +348,16 @@ function App() {
   }
 
   // ---------------------------------------------------------------------------
-  // Render — profile gate
+  // Render — auth gate (when Cognito is configured)
   // ---------------------------------------------------------------------------
-  if (!activeProfile) {
+  if (AUTH_ENABLED && !authSession) {
+    return <AuthGate onAuthenticated={setAuthSession} />;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Render — profile gate (demo mode, when auth is not configured)
+  // ---------------------------------------------------------------------------
+  if (!AUTH_ENABLED && !activeProfile) {
     return (
       <ProfileManager activeProfile={null} onProfileChange={refreshDemoState} />
     );
@@ -332,12 +396,12 @@ function App() {
           <a className="brand" href="#main-content" aria-label="WealthLens home">
             <span className="brand-logo" aria-hidden="true">
               <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" width="36" height="36">
-                <circle cx="20" cy="20" r="18" stroke="#e8f0f8" strokeWidth="2.5" fill="#102B46"/>
-                <circle cx="20" cy="20" r="11" fill="#1a4a6b"/>
-                <circle cx="20" cy="20" r="6.5" fill="#2563a8"/>
-                <circle cx="20" cy="20" r="3" fill="#60a5d8"/>
-                <ellipse cx="16.5" cy="16.5" rx="2.5" ry="1.6" fill="white" opacity="0.3" transform="rotate(-20 16.5 16.5)"/>
-                <circle cx="24" cy="16" r="1" fill="white" opacity="0.45"/>
+                <circle cx="20" cy="20" r="18" fill="#102B46"/>
+                <circle cx="20" cy="20" r="12" fill="#1a4a6b"/>
+                <circle cx="20" cy="20" r="7.5" fill="#1a7972"/>
+                <circle cx="20" cy="20" r="3.5" fill="#2da89e"/>
+                <ellipse cx="16.5" cy="16.5" rx="2.5" ry="1.6" fill="white" opacity="0.25" transform="rotate(-20 16.5 16.5)"/>
+                <circle cx="24" cy="16" r="1" fill="white" opacity="0.35"/>
               </svg>
             </span>
             <span className="brand-name">WealthLens</span>
@@ -345,25 +409,40 @@ function App() {
 
           <nav className="main-nav-inline" aria-label="Main navigation">
             <button
-              className={`nav-tab ${navTab === "explore" ? "nav-tab-active" : ""}`}
-              type="button"
-              onClick={() => setNavTab("explore")}
-            >Explore</button>
-            <button
               className={`nav-tab ${navTab === "portfolio" ? "nav-tab-active" : ""}`}
               type="button"
-              onClick={() => setNavTab("portfolio")}
+              onClick={() => requestNavTo("portfolio")}
             >Holdings</button>
             <button
-              className={`nav-tab ${navTab === "advisor" ? "nav-tab-active" : ""}`}
+              className={`nav-tab ${navTab === "explore" ? "nav-tab-active" : ""}`}
               type="button"
-              onClick={() => setNavTab("advisor")}
-            >Advisor View</button>
+              onClick={() => requestNavTo("explore")}
+            >Explore</button>
           </nav>
 
           <div className="header-right">
+            {isAdvisorMode && (
+              <span className="advisor-mode-label">Advisor Demo</span>
+            )}
             {API_MODE === "mock" && <span className="mock-mode-label">Demo data</span>}
-            <ProfileManager activeProfile={activeProfile} onProfileChange={refreshDemoState} />
+            {AUTH_ENABLED && authSession ? (
+              <div className="auth-session-banner">
+                <span className={`auth-user-badge ${authSession.role === "advisor" ? "auth-role-badge-advisor" : ""}`}
+                  title={authSession.email}>
+                  {authSession.role === "advisor" ? "Advisor" : "Investor"} · {authSession.email}
+                </span>
+                <button className="text-button auth-signout-btn" type="button" onClick={handleSignOut}>
+                  Sign out
+                </button>
+              </div>
+            ) : !AUTH_ENABLED ? (
+              <ProfileManager
+                activeProfile={activeProfile}
+                onProfileChange={refreshDemoState}
+                onAdvisorMode={() => setIsAdvisorMode((v) => !v)}
+                isAdvisorMode={isAdvisorMode}
+              />
+            ) : null}
           </div>
         </div>
       </header>
@@ -383,24 +462,49 @@ function App() {
       {/* Mobile nav (hidden on desktop via CSS) */}
       <div className="mobile-nav" aria-label="Main navigation">
         <div className="mobile-nav-inner">
-          <button className={`nav-tab ${navTab === "explore" ? "nav-tab-active" : ""}`} type="button" onClick={() => setNavTab("explore")}>Explore</button>
-          <button className={`nav-tab ${navTab === "portfolio" ? "nav-tab-active" : ""}`} type="button" onClick={() => setNavTab("portfolio")}>Holdings</button>
-          <button className={`nav-tab ${navTab === "advisor" ? "nav-tab-active" : ""}`} type="button" onClick={() => setNavTab("advisor")}>Advisor View</button>
+          <button className={`nav-tab ${navTab === "portfolio" ? "nav-tab-active" : ""}`} type="button" onClick={() => requestNavTo("portfolio")}>Holdings</button>
+          <button className={`nav-tab ${navTab === "explore" ? "nav-tab-active" : ""}`} type="button" onClick={() => requestNavTo("explore")}>Explore</button>
         </div>
       </div>
 
       <main id="main-content" className="main-content">
-        {navTab === "advisor" ? (
+        {/* Unsaved holdings guard dialog */}
+        {pendingNav && (
+          <div className="unsaved-guard-overlay" role="dialog" aria-modal="true" aria-labelledby="guard-title">
+            <div className="unsaved-guard-card">
+              <h2 id="guard-title" className="unsaved-guard-title">Unsaved changes</h2>
+              <p className="unsaved-guard-body">Your Holdings have unsaved edits. Save them before leaving, or discard your changes.</p>
+              <div className="unsaved-guard-actions">
+                <button className="primary-button" type="button" onClick={() => {
+                  // Signal PortfolioPage to save — it will call onSave which clears dirty
+                  // We use a custom event for simplicity
+                  window.dispatchEvent(new CustomEvent("wl:portfolio-save-request"));
+                }}>Save changes</button>
+                <button className="secondary-button" type="button" onClick={() => handleGuardAction("discard")}>Discard</button>
+                <button className="text-button" type="button" onClick={() => handleGuardAction("stay")}>Stay</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {isAdvisorMode ? (
           <AdvisorView />
         ) : navTab === "portfolio" && activeAccount ? (
           <PortfolioPage
             account={activeAccount}
+            onDirtyChange={setPortfolioIsDirty}
             onSave={() => {
+              setPortfolioIsDirty(false);
               refreshDemoState();
-              // Invalidate analysis since portfolio changed
               setAnalysis(null);
               setAnalysisError("");
+              if (pendingNav) {
+                setNavTab(pendingNav);
+                setPendingNav(null);
+              }
             }}
+            saveRequested={!!pendingNav}
+            onExplore={() => setNavTab("explore")}
           />
         ) : (
           <>
@@ -499,17 +603,19 @@ function App() {
 
                   <p className="portfolio-note">
                     {activeAccount?.customHoldings
-                      ? "Custom portfolio saved in your browser. Edit it on the Portfolio tab."
+                      ? "Custom portfolio saved in your browser. Edit it on the Holdings tab."
                       : "This fictional portfolio is used consistently across all WealthLens demonstrations. All values are synthetic."}
                   </p>
 
-                  <button
-                    className="text-button portfolio-edit-link"
-                    type="button"
-                    onClick={() => setNavTab("portfolio")}
-                  >
-                    Edit holdings →
-                  </button>
+                  <div className="portfolio-card-actions">
+                    <button
+                      className="text-button portfolio-edit-link"
+                      type="button"
+                      onClick={() => requestNavTo("portfolio")}
+                    >
+                      Edit holdings →
+                    </button>
+                  </div>
                 </aside>
 
                 {/* Scenario panel */}
@@ -518,6 +624,14 @@ function App() {
                     <p className="section-kicker">Step 1 of 2</p>
                     <h2 id="scenario-panel-title">Explore a market scenario</h2>
                     <p>Choose a supported scenario or enter a question for interpretation.</p>
+                    <button
+                      className="secondary-button"
+                      type="button"
+                      style={{ marginTop: "12px" }}
+                      onClick={() => { setShowComparison(true); window.setTimeout(() => document.getElementById("cmp-panel-anchor")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0); }}
+                    >
+                      Compare two scenarios
+                    </button>
                   </div>
 
                   <form className="question-form" onSubmit={handleQuestionSubmit}>
@@ -678,7 +792,9 @@ function App() {
                             </span>
                           </span>
                           <span className="scenario-description">{scenario.summary}</span>
-                          <span className="scenario-horizon">Horizon: {scenario.horizon}</span>
+                          <span className="scenario-horizon">
+                              {scenario.kind === "purchasing-power" ? "Horizon: variable (1–60 months)" : `Horizon: ${scenario.horizon}`}
+                            </span>
                         </button>
                       );
                     })}
@@ -689,7 +805,7 @@ function App() {
                       <div className="confirmation-heading">
                         <div>
                           <p className="section-kicker">Step 2 of 2</p>
-                          <h3 id="confirmation-title">Confirm the assumptions</h3>
+                          <h3 id="confirmation-title">Customize your scenario</h3>
                         </div>
                         <button className="text-button" type="button" onClick={clearSelection}>
                           Clear
@@ -698,7 +814,11 @@ function App() {
 
                       <div className="confirmed-scenario">
                         <strong>{selectedScenario.label}</strong>
-                        <span>Horizon: {selectedScenario.horizon}</span>
+                        <span>
+                          {selectedScenario.kind === "purchasing-power"
+                            ? `Annual inflation: ${magnitude ?? selectedScenario.paramDefault}% · Time period: ${inflationHorizonMonths < 12 ? `${inflationHorizonMonths} month${inflationHorizonMonths === 1 ? "" : "s"}` : inflationHorizonMonths === 12 ? "1 year (12 months)" : `${(inflationHorizonMonths / 12).toFixed(inflationHorizonMonths % 12 === 0 ? 0 : 1)} years (${inflationHorizonMonths} months)`}`
+                            : `Horizon: ${selectedScenario.horizon}`}
+                        </span>
                       </div>
 
                       {selectedScenario.kind === "purchasing-power" && (
@@ -719,10 +839,26 @@ function App() {
 
                       {selectedScenario.kind === "purchasing-power" ? (
                         <div className="horizon-control">
-                          <label className="magnitude-label" htmlFor="inflation-horizon">
-                            Horizon (months)
+                          <label className="magnitude-label">
+                            Purchasing-power horizon
                           </label>
-                          <div className="magnitude-input-row">
+                          <div className="horizon-preset-buttons">
+                            {[3, 6, 12, 36, 60].map((mo) => (
+                              <button
+                                key={mo}
+                                type="button"
+                                className={`horizon-preset-btn ${inflationHorizonMonths === mo ? "horizon-preset-btn-active" : ""}`}
+                                onClick={() => {
+                                  setInflationHorizonMonths(mo);
+                                  setAnalysis(null);
+                                  setAnalysisError("");
+                                }}
+                              >
+                                {mo < 12 ? `${mo} mo` : mo === 12 ? "1 yr" : mo === 36 ? "3 yr" : "5 yr"}
+                              </button>
+                            ))}
+                          </div>
+                          <div className="magnitude-input-row" style={{marginTop: "10px"}}>
                             <input
                               type="range"
                               className="magnitude-slider"
@@ -758,29 +894,46 @@ function App() {
                           </div>
                           <div className="magnitude-range-labels"><span>1 mo</span><span>60 mo</span></div>
                           <p className="magnitude-pp-note">
-                            Horizon only applies to the purchasing-power illustration.
-                            Formula: real value = nominal ÷ (1 + annual rate)^(months ÷ 12).
+                            Purchasing-power erosion accumulates over time. Formula: real value = nominal ÷ (1 + annual rate)^(months ÷ 12).
+                            Nominal returns, contributions, withdrawals, taxes, and fees are excluded.
                           </p>
                         </div>
                       ) : (
                         <div className="horizon-disabled-note">
-                          <strong>Horizon:</strong> Immediate shock — this scenario models an
-                          instantaneous asset-price repricing, not a time-compounded return.
-                          A time-dependent method is not yet implemented for this scenario type.
+                          <strong>Shock timing: immediate.</strong> This scenario models an
+                          instantaneous asset-price repricing. Values are held flat afterward—no recovery, further growth, income, or additional shocks are modelled.
+                          The endpoint value is therefore the same regardless of how long you hold.
+                          A time-dependent return forecast is not implemented for this scenario type.
                         </div>
                       )}
 
-                      <ul className="assumption-list">
-                        {selectedScenario.assumptionNotes.map((note) => (
-                          <li key={note}>{note}</li>
-                        ))}
-                      </ul>
+                      {/* Dynamic assumption notes for inflation; static notes for other scenarios */}
+                      {selectedScenario.kind === "purchasing-power" ? (
+                        <ul className="assumption-list">
+                          {[
+                            `Nominal return is held flat at 0% for every holding over the selected period.`,
+                            `Annual inflation is assumed to be ${magnitude ?? selectedScenario.paramDefault}% throughout the selected period.`,
+                            `Purchasing power is calculated as: nominal value ÷ (1 + ${magnitude ?? selectedScenario.paramDefault}% ÷ 100)^(${inflationHorizonMonths} ÷ 12).`,
+                            `This is an illustration of real value, not a market return forecast.`,
+                            `No trading, rebalancing, taxes, or fees are modelled.`,
+                          ].map((note) => (
+                            <li key={note}>{note}</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <ul className="assumption-list">
+                          {selectedScenario.assumptionNotes.map((note) => (
+                            <li key={note}>{note}</li>
+                          ))}
+                        </ul>
+                      )}
 
                       <button
                         className="primary-button"
                         type="button"
                         onClick={handleAnalyze}
-                        disabled={isAnalyzing}
+                        disabled={isAnalyzing || selectedScenario.metadataValid === false}
+                        aria-disabled={isAnalyzing || selectedScenario.metadataValid === false}
                       >
                         {isAnalyzing ? "Analyzing scenario…" : "Analyze this scenario"}
                       </button>
@@ -805,6 +958,15 @@ function App() {
               </div>
             )}
 
+            {showComparison && (
+              <div id="cmp-panel-anchor">
+                <ScenarioComparison
+                  scenarios={scenarios}
+                  onClose={() => setShowComparison(false)}
+                />
+              </div>
+            )}
+
             {analysis && selectedScenario && (
               <>
                 {analysisConfigKey && analysisConfigKey !== makeConfigKey() && (
@@ -822,6 +984,7 @@ function App() {
                   discussState={discussState}
                   onDiscuss={handleDiscuss}
                   onTryAnother={handleTryAnother}
+                  onCompare={() => { setShowComparison(true); window.setTimeout(() => document.getElementById("cmp-panel-anchor")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0); }}
                 />
               </>
             )}
@@ -838,6 +1001,10 @@ function App() {
         <span>WealthLens</span>
         <span>Demo · Synthetic data only · Not investment advice · Browser-local storage</span>
       </footer>
+
+      {import.meta.env.DEV && (
+        <DevDiagnostics scenarios={scenarios} isLoading={isLoading} loadError={loadError} />
+      )}
     </div>
   );
 }

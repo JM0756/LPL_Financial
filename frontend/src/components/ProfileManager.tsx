@@ -10,9 +10,11 @@ import {
 interface ProfileManagerProps {
   activeProfile: DemoProfile | null;
   onProfileChange: () => void;
+  onAdvisorMode?: () => void;
+  isAdvisorMode?: boolean;
 }
 
-export function ProfileManager({ activeProfile, onProfileChange }: ProfileManagerProps) {
+export function ProfileManager({ activeProfile, onProfileChange, onAdvisorMode, isAdvisorMode }: ProfileManagerProps) {
   const [mode, setMode] = useState<"idle" | "create" | "switch">("idle");
   const [name, setName] = useState("");
   const [error, setError] = useState("");
@@ -47,12 +49,13 @@ export function ProfileManager({ activeProfile, onProfileChange }: ProfileManage
       <div className="profile-gate">
         <div className="profile-gate-card">
           <div className="profile-gate-logo" aria-hidden="true">
-            <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" width="48" height="48">
-              <circle cx="20" cy="20" r="18" stroke="#e8f0f8" stroke-width="2.5" fill="#1a4a6b"/>
-              <circle cx="20" cy="20" r="11" fill="#2563a8"/>
-              <circle cx="20" cy="20" r="6.5" fill="#3b82c4"/>
-              <circle cx="20" cy="20" r="3" fill="#60a5d8"/>
-              <ellipse cx="16.5" cy="16.5" rx="2.5" ry="1.6" fill="white" opacity="0.3" transform="rotate(-20 16.5 16.5)"/>
+            <svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg" width="72" height="72">
+              <circle cx="28" cy="28" r="26" fill="#102B46"/>
+              <circle cx="28" cy="28" r="17" fill="#1a4a6b"/>
+              <circle cx="28" cy="28" r="10" fill="#1a7972"/>
+              <circle cx="28" cy="28" r="5" fill="#2da89e"/>
+              <ellipse cx="23" cy="23" rx="3.5" ry="2.2" fill="white" opacity="0.25" transform="rotate(-20 23 23)"/>
+              <circle cx="33" cy="22" r="1.5" fill="white" opacity="0.35"/>
             </svg>
           </div>
           <h1 className="profile-gate-title">WealthLens</h1>
@@ -133,13 +136,22 @@ export function ProfileManager({ activeProfile, onProfileChange }: ProfileManage
               </li>
             ))}
           </ul>
-          {mode === "switch" && (
-            <div className="profile-dropdown-actions">
-              <button className="text-button" type="button" onClick={() => { setMode("create"); }}>
-                + New profile
-              </button>
-              <button className="text-button text-button-danger" type="button" onClick={handleSignOut}>
-                Sign out
+          <div className="profile-dropdown-actions">
+            <button className="text-button" type="button" onClick={() => { setMode("create"); }}>
+              + New profile
+            </button>
+            <button className="text-button text-button-danger" type="button" onClick={handleSignOut}>
+              Sign out
+            </button>
+          </div>
+          {onAdvisorMode && (
+            <div className="profile-dropdown-advisor">
+              <button
+                className="text-button profile-advisor-switch-btn"
+                type="button"
+                onClick={() => { setMode("idle"); onAdvisorMode(); }}
+              >
+                {isAdvisorMode ? "↩ Return to investor view" : "Switch to advisor demo →"}
               </button>
             </div>
           )}

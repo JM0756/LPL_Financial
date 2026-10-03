@@ -1,4 +1,5 @@
 import { analysisFixtures, portfolioFixture, scenarioFixtures } from "./mocks/fixtures";
+import { AUTH_ENABLED, getStoredSession } from "./auth";
 import type {
   AnalysisResult,
   AdvisorQuestionResult,
@@ -65,8 +66,19 @@ async function parseResponse<T>(response: Response): Promise<T> {
 }
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  const authHeaders: Record<string, string> = {};
+  if (AUTH_ENABLED) {
+    const session = getStoredSession();
+    if (session) authHeaders["Authorization"] = `Bearer ${session.accessToken}`;
+  }
   const response = await fetch(`${API_BASE_URL}${path}`, {
-    headers: { Accept: "application/json", ...init?.headers },
+    headers: {
+      Accept: "application/json",
+      "Cache-Control": "no-cache, no-store",
+      ...authHeaders,
+      ...init?.headers,
+    },
+    cache: "no-store",
     ...init,
   });
   return parseResponse<T>(response);
@@ -112,6 +124,21 @@ function adaptPortfolio(raw: Record<string, unknown>): Portfolio {
 function adaptScenarioDefinition(raw: Record<string, unknown>): ScenarioDefinition {
   const key = raw["scenario_key"] as ScenarioKey;
   const valuationBasis = typeof raw["valuation_basis"] === "string" ? raw["valuation_basis"] : "nominal_market_value";
+  const paramDefault = typeof raw["param_default"] === "number" ? raw["param_default"] : null;
+  const paramMin = typeof raw["param_min"] === "number" ? raw["param_min"] : null;
+  const paramMax = typeof raw["param_max"] === "number" ? raw["param_max"] : null;
+  const paramStep = typeof raw["param_step"] === "number" ? raw["param_step"] : null;
+  const paramMethodology = typeof raw["param_methodology"] === "string" && raw["param_methodology"].trim() !== ""
+    ? raw["param_methodology"]
+    : null;
+  // Detect missing or invalid metadata.
+  // Use explicit type + finite checks — zero is a valid minimum (e.g. inflation 0%).
+  const metadataValid =
+    paramDefault !== null && Number.isFinite(paramDefault) &&
+    paramMin !== null && Number.isFinite(paramMin) &&
+    paramMax !== null && Number.isFinite(paramMax) &&
+    paramStep !== null && Number.isFinite(paramStep) && paramStep > 0 &&
+    paramMin <= paramDefault && paramDefault <= paramMax;
   return {
     key,
     label: typeof raw["label"] === "string" ? raw["label"] : key,
@@ -125,12 +152,13 @@ function adaptScenarioDefinition(raw: Record<string, unknown>): ScenarioDefiniti
     kind: valuationBasis === "real_purchasing_power" ? "purchasing-power" : "market",
     paramLabel: typeof raw["param_label"] === "string" ? raw["param_label"] : "Magnitude",
     paramUnit: typeof raw["param_unit"] === "string" ? raw["param_unit"] : "percent",
-    paramDefault: typeof raw["param_default"] === "number" ? raw["param_default"] : 0,
-    paramMin: typeof raw["param_min"] === "number" ? raw["param_min"] : 0,
-    paramMax: typeof raw["param_max"] === "number" ? raw["param_max"] : 100,
-    paramStep: typeof raw["param_step"] === "number" ? raw["param_step"] : 1,
-    paramMethodology: typeof raw["param_methodology"] === "string" ? raw["param_methodology"] : "",
+    paramDefault: paramDefault ?? 0,
+    paramMin: paramMin ?? 0,
+    paramMax: paramMax ?? 100,
+    paramStep: paramStep ?? 1,
+    paramMethodology: paramMethodology ?? "",
     baselineMagnitude: typeof raw["baseline_magnitude"] === "number" ? raw["baseline_magnitude"] : 0,
+    metadataValid,
   };
 }
 
@@ -195,6 +223,7 @@ function adaptAnalysisResult(raw: Record<string, unknown>): AnalysisResult {
       purchasingPowerValue,
       purchasingPowerChangeDollars,
       purchasingPowerChangePercent,
+      inflationRatePercent: typeof raw["inflation_rate_percent"] === "number" ? raw["inflation_rate_percent"] : undefined,
     };
   }
 
@@ -390,4 +419,10 @@ export async function listDiscussions(signal?: AbortSignal): Promise<DiscussionL
     discussions: items.map(adaptDiscussionRecord),
     storageBackend: typeof raw["storage_backend"] === "string" ? raw["storage_backend"] : null,
   };
+}
+
+export async function resetDiscussions(): Promise<{ cleared: { analyses: number; discussions: number; advisor_questions: number } }> {
+  const raw = await apiFetch<Record<string, unknown>>("/api/discussions", { method: "DELETE" });
+  const cleared = (raw["cleared"] ?? {}) as { analyses: number; discussions: number; advisor_questions: number };
+  return { cleared };
 }

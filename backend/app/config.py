@@ -83,8 +83,26 @@ class Settings:
     # API
     allowed_origins: list[str] = field(
         default_factory=lambda: _csv(
-            "ALLOWED_ORIGINS", ["http://localhost:3000", "http://localhost:5173"]
+            "ALLOWED_ORIGINS",
+            [
+                "http://localhost:3000",
+                "http://localhost:5173",
+                "http://localhost:5176",
+                "https://dh133zzs2y30r.cloudfront.net",
+            ],
         )
+    )
+
+    # Cognito auth (optional — when not set, demo mode is preserved)
+    auth_enabled: bool = field(default_factory=lambda: _bool("AUTH_ENABLED", False))
+    cognito_region: str = field(
+        default_factory=lambda: os.getenv("COGNITO_REGION", os.getenv("AWS_REGION", "us-east-1"))
+    )
+    cognito_user_pool_id: str | None = field(
+        default_factory=lambda: os.getenv("COGNITO_USER_POOL_ID") or None
+    )
+    cognito_client_id: str | None = field(
+        default_factory=lambda: os.getenv("COGNITO_CLIENT_ID") or None
     )
 
 
