@@ -1,55 +1,64 @@
-# ScenarioCraft / WealthLens - Product Overview
+# WealthLens - Product Overview
 
 ## Project Purpose
 
-ScenarioCraft (backend) / WealthLens (frontend) is a deterministic portfolio scenario analysis application that helps investors visualize the potential impact of market events on their portfolios. It combines a FastAPI backend with AWS Bedrock integration and a React TypeScript frontend.
+WealthLens (also known as ScenarioCraft) is a deterministic scenario analysis platform for investment portfolios. It enables investors and financial advisors to visualize how market events would impact portfolio values using predefined, transparent assumptions.
 
 ## Value Proposition
 
-- **Deterministic Analysis**: All financial calculations are performed server-side with Decimal precision, ensuring consistent and reproducible results
-- **AI-Augmented Explanations**: AWS Bedrock provides qualitative prose explanations while the engine owns all numeric calculations
-- **Transparent Assumptions**: Every scenario clearly displays its assumptions, methodology, and limitations
-- **Advisor Workflow**: Built-in discussion request system connects investors with advisors for follow-up conversations
+- **Transparent Analysis**: All calculations are deterministic and server-side computed - no hidden algorithms or black-box models
+- **Educational Tool**: Helps investors understand portfolio sensitivity to market scenarios without making predictions
+- **Advisor Collaboration**: Facilitates informed conversations between investors and their financial advisors
+- **No Live Data Risk**: Uses synthetic data only, eliminating compliance concerns around real portfolio data
 
 ## Key Features
 
-1. **Scenario Analysis Engine**
-   - Market crash simulation (-12.95% impact)
-   - Oil shock modeling (+0.10% impact)
-   - Inflation/purchasing power illustration (-4.76% at 5% annual rate)
-   - Custom magnitude controls for sensitivity analysis
-   - Variable horizon support for inflation scenarios (1-60 months)
+### Scenario Analysis Engine
+- Market crash simulation with configurable magnitude
+- Oil shock impact modeling
+- Inflation/purchasing power illustrations (1-60 month horizons)
+- Per-holding attribution showing exactly which assets drive portfolio changes
 
-2. **Portfolio Management**
-   - Synthetic $100,000 demo portfolio with 7 holdings
-   - Custom portfolio support with per-holding value editing
-   - Asset class attribution and contribution analysis
-   - Top contributors/detractors identification
+### Portfolio Management
+- Custom portfolio creation with up to 7 holdings
+- Portfolio scaling to different total values
+- Multiple portfolio support per user
+- Browser-local storage for demo mode, Cognito auth for production
 
-3. **Natural Language Interpretation**
-   - Question interpretation via Bedrock to map user queries to supported scenarios
-   - Preset offering when exact match isn't available
-   - Unsupported question routing to advisors
+### Advisor Integration
+- Discussion request system for unmodeled questions
+- Advisor view feed for managing client inquiries
+- Status tracking (pending, reviewed, resolved)
+- Server-side snapshot preservation for audit trail
 
-4. **Advisor Integration**
-   - Discussion request creation linked to analysis snapshots
-   - Advisor view for reviewing client requests
-   - Status workflow (pending → reviewed → resolved)
-   - DynamoDB persistence for audit trail
-
-5. **Authentication (Optional)**
-   - AWS Cognito integration for investor/advisor roles
-   - Demo mode with profile/account management when auth disabled
+### AI-Assisted Interpretation
+- Natural language question interpretation via AWS Bedrock
+- Maps free-text questions to supported scenarios
+- Graceful fallback when Bedrock unavailable (template explanations)
+- Bedrock never generates numbers - only qualitative prose
 
 ## Target Users
 
-- **Investors**: Explore "what-if" scenarios on their portfolios before advisor meetings
-- **Financial Advisors**: Review client scenario analyses and discussion requests
-- **Demo Users**: Experience the platform with synthetic data and browser-local storage
+### Investors
+- Self-directed investors exploring "what-if" scenarios
+- Clients preparing for advisor meetings
+- Users wanting to understand portfolio risk exposure
+
+### Financial Advisors
+- Reviewing client scenario questions
+- Explaining market impact in client-friendly terms
+- Managing discussion requests from multiple clients
 
 ## Use Cases
 
-1. Pre-meeting preparation: Investor explores market crash impact before advisor call
-2. Inflation planning: Visualize purchasing power erosion over different time horizons
-3. Scenario comparison: Compare two scenarios side-by-side
-4. Advisor handoff: Route complex questions outside supported scenarios to human advisors
+1. **Pre-Meeting Preparation**: Investor explores market crash scenario, saves discussion request for advisor review
+2. **Risk Education**: Advisor walks client through inflation impact on purchasing power over different time horizons
+3. **Portfolio Comparison**: User compares two scenarios side-by-side to understand relative risk
+4. **Custom Portfolio Analysis**: User creates custom allocation and tests against market scenarios
+
+## Technical Boundaries
+
+- Synthetic data only - no real portfolio uploads
+- No live market prices
+- No trading, rebalancing, tax, or fee calculations
+- Illustrative scenarios only - not investment recommendations

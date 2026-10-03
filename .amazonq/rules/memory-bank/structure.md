@@ -1,51 +1,50 @@
-# Project Structure
+# WealthLens - Project Structure
 
-## Directory Layout
+## Directory Overview
 
 ```
 /workshop/
-├── backend/                    # FastAPI Python backend
-│   ├── app/
-│   │   ├── __init__.py        # Package version
-│   │   ├── main.py            # FastAPI app, routes, middleware
-│   │   ├── engine.py          # Deterministic calculation engine (Decimal-only)
-│   │   ├── scenarios.py       # Scenario definitions, portfolio data
-│   │   ├── bedrock_service.py # AWS Bedrock integration for prose
-│   │   ├── storage.py         # DynamoDB/memory storage abstraction
-│   │   ├── auth.py            # Cognito JWT verification
-│   │   └── config.py          # Settings via pydantic-settings
-│   ├── tests/
-│   │   ├── conftest.py        # Pytest fixtures
-│   │   ├── test_api.py        # API endpoint tests
-│   │   ├── test_engine.py     # Engine calculation tests
-│   │   └── test_*.py          # Additional test modules
-│   ├── requirements.txt       # Python dependencies
-│   └── .env.example           # Environment template
+├── backend/                    # Python FastAPI backend
+│   ├── app/                    # Application source code
+│   │   ├── __init__.py         # Package init with version
+│   │   ├── auth.py             # Cognito JWT verification
+│   │   ├── bedrock_service.py  # AWS Bedrock integration
+│   │   ├── config.py           # Settings via pydantic
+│   │   ├── engine.py           # Deterministic calculation engine
+│   │   ├── main.py             # FastAPI app and routes
+│   │   ├── scenarios.py        # Scenario definitions and portfolio data
+│   │   └── storage.py          # DynamoDB/memory storage abstraction
+│   ├── tests/                  # Pytest test suite
+│   │   ├── conftest.py         # Shared fixtures
+│   │   ├── test_api.py         # API endpoint tests
+│   │   ├── test_engine.py      # Engine calculation tests
+│   │   └── test_*.py           # Additional test modules
+│   ├── requirements.txt        # Python dependencies
+│   └── .env.example            # Environment template
 │
 ├── frontend/                   # React TypeScript frontend
 │   ├── src/
-│   │   ├── main.tsx           # React entry point
-│   │   ├── App.tsx            # Main application component
-│   │   ├── api.ts             # Backend API client
-│   │   ├── auth.ts            # Cognito auth helpers
-│   │   ├── types.ts           # TypeScript interfaces
-│   │   ├── demo-storage.ts    # Browser localStorage for demo mode
-│   │   ├── components/
-│   │   │   ├── AnalysisResults.tsx    # Scenario results display
-│   │   │   ├── AdvisorView.tsx        # Advisor dashboard
-│   │   │   ├── AuthGate.tsx           # Login/signup forms
-│   │   │   ├── PortfolioPage.tsx      # Holdings editor
-│   │   │   ├── MagnitudeControl.tsx   # Scenario magnitude slider
-│   │   │   ├── ScenarioComparison.tsx # Side-by-side comparison
-│   │   │   └── *.tsx                  # Other UI components
-│   │   ├── mocks/
-│   │   │   └── fixtures.ts    # Mock data for offline mode
-│   │   └── tests/
-│   │       └── *.test.mjs     # Frontend tests
-│   ├── public/                # Static assets
-│   ├── package.json           # Node dependencies
-│   ├── vite.config.ts         # Vite build configuration
-│   └── tsconfig.json          # TypeScript configuration
+│   │   ├── components/         # React components
+│   │   │   ├── AccountManager.tsx
+│   │   │   ├── AccountMenu.tsx
+│   │   │   ├── AnalysisResults.tsx
+│   │   │   ├── AuthGate.tsx
+│   │   │   ├── MyPortfolioPage.tsx
+│   │   │   ├── PortfolioPage.tsx
+│   │   │   ├── ProfileManager.tsx
+│   │   │   └── ScenarioComparison.tsx
+│   │   ├── mocks/              # Mock data for offline dev
+│   │   ├── tests/              # Frontend tests
+│   │   ├── api.ts              # Backend API client
+│   │   ├── auth.ts             # Cognito authentication
+│   │   ├── auth-storage.ts     # Auth user portfolio storage
+│   │   ├── demo-storage.ts     # Demo mode local storage
+│   │   ├── App.tsx             # Main application component
+│   │   ├── types.ts            # TypeScript type definitions
+│   │   └── theme.ts            # UI theming
+│   ├── package.json            # Node dependencies
+│   ├── vite.config.ts          # Vite build configuration
+│   └── tsconfig.json           # TypeScript configuration
 │
 └── .amazonq/rules/memory-bank/ # Project documentation
 ```
@@ -54,47 +53,72 @@
 
 ### Backend Architecture
 
-1. **Engine Layer** (`engine.py`)
-   - Pure calculation logic with Decimal precision
-   - No I/O, no randomness, no external dependencies
-   - Penny-reconciliation via largest-remainder algorithm
-   - Exports: `analyze()`, `get_portfolio()`, `validate_custom_portfolio()`
+**Engine Layer** (`engine.py`)
+- Pure Decimal arithmetic - no floats
+- Zero I/O, zero randomness in calculations
+- Largest-remainder reconciliation for penny-exact totals
+- Validates custom portfolios and magnitude overrides
 
-2. **API Layer** (`main.py`)
-   - FastAPI routes with Pydantic request/response models
-   - CORS middleware for frontend integration
-   - Dependency injection for auth and services
+**API Layer** (`main.py`)
+- FastAPI with CORS middleware
+- Request validation via Pydantic models
+- No numeric fields accepted from clients
+- All calculations server-side
 
-3. **Service Layer**
-   - `bedrock_service.py`: Interpret questions, generate explanations
-   - `storage.py`: Abstract DynamoDB/memory backends
-   - `auth.py`: JWT verification with Cognito
+**Storage Layer** (`storage.py`)
+- Dual backend: DynamoDB (production) or in-memory (dev)
+- Single-table design with pk/sk pattern
+- Graceful degradation when DynamoDB unavailable
 
-4. **Data Layer** (`scenarios.py`)
-   - Scenario definitions with shocks per holding
-   - Synthetic portfolio (7 holdings, $100k total)
-   - Constants: `ASSUMPTIONS_VERSION`, `ENGINE_VERSION`
+**Bedrock Service** (`bedrock_service.py`)
+- Lazy-loaded AWS Bedrock client
+- Question interpretation (text → scenario mapping)
+- Explanation generation (numbers → prose)
+- Rejects any Bedrock output containing digits
 
 ### Frontend Architecture
 
-1. **State Management**: React hooks (useState, useEffect, useCallback)
-2. **API Communication**: Fetch-based client with abort controller support
-3. **Routing**: Single-page with tab-based navigation (Explore/Holdings)
-4. **Styling**: CSS with custom properties, no framework
+**Authentication** (`auth.ts`, `AuthGate.tsx`)
+- Amazon Cognito via amazon-cognito-identity-js
+- SRP sign-in (no client secret)
+- Role derived from cognito:groups claim
+- Session storage (cleared on tab close)
 
-### Data Flow
+**State Management** (`App.tsx`)
+- React useState/useEffect hooks
+- No external state library
+- Request ID tracking for race condition prevention
 
-```
-User Question → /api/interpret → Bedrock → Scenario Match
-     ↓
-Scenario Selection → /api/analyze → Engine → Results + Bedrock Explanation
-     ↓
-Discussion Request → /api/discussions → DynamoDB → Advisor View
-```
+**Storage Abstraction**
+- `demo-storage.ts`: localStorage for unauthenticated users
+- `auth-storage.ts`: localStorage keyed by user email
 
 ## Architectural Patterns
 
-- **Server-Authoritative Numbers**: All financial calculations happen server-side
-- **Graceful Degradation**: Works offline with mock data and memory storage
-- **Idempotency**: Discussion requests support idempotency keys
-- **Audit Trail**: Analysis snapshots stored before discussion creation
+### Separation of Concerns
+- Engine owns all numbers
+- Bedrock owns all prose
+- Frontend owns all presentation
+- No component crosses these boundaries
+
+### Graceful Degradation
+- Backend works without Bedrock (template explanations)
+- Backend works without DynamoDB (in-memory store)
+- Frontend works without backend (mock mode)
+
+### Idempotency
+- Discussion requests use idempotency keys
+- Analysis snapshots stored by analysis_id
+- Prevents duplicate submissions
+
+## Data Flow
+
+```
+User Question → /api/interpret → Bedrock (optional) → Scenario Match
+                                                           ↓
+User Confirms → /api/analyze → Engine (Decimal math) → Snapshot
+                                      ↓
+                              Bedrock (prose only) → Explanation
+                                      ↓
+                              Storage (DynamoDB/memory) → Response
+```
