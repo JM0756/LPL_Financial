@@ -65,10 +65,22 @@ class InterpretRequest(BaseModel):
 
 class AnalyzeRequest(BaseModel):
     scenario_key: str = Field(..., examples=list(SCENARIO_KEYS))
-    horizon: str | None = Field(default=None, examples=["1Y"])
+    horizon: str | None = Field(
+        default=None,
+        examples=["1Y", "12M", "24M"],
+        description="Horizon string. For inflation: NM (1–60 months) or NY. For other scenarios: must match the preset (1Y)."
+    )
     confirmed: bool = Field(default=True, description="Client must confirm the offered preset.")
     question: str | None = Field(default=None, max_length=500,
                                  description="Optional original question, stored for audit only.")
+    custom_portfolio: list[dict] | None = Field(
+        default=None,
+        description="Optional custom holdings. Each item must have holding_id (str) and value (number >= 0)."
+    )
+    requested_magnitude: float | None = Field(
+        default=None,
+        description="Optional magnitude override. Must be within the scenario's supported range."
+    )
 
 
 class DiscussionRequest(BaseModel):
@@ -159,8 +171,43 @@ def analyze(payload: AnalyzeRequest) -> dict:
             },
         )
 
+    # Validate and parse custom portfolio if provided
+    custom_holdings: dict | None = None
+    if payload.custom_portfolio is not None:
+        from .engine import validate_custom_portfolio
+        try:
+            custom_holdings = validate_custom_portfolio(payload.custom_portfolio)
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=400,
+                detail={"error": "invalid_portfolio", "message": str(exc)},
+            ) from exc
+
+    # Validate requested_magnitude if provided
+    requested_magnitude: float | None = None
+    if payload.requested_magnitude is not None:
+        from .scenarios import _SCENARIO_PARAMS
+        params = _SCENARIO_PARAMS.get(payload.scenario_key, {})
+        mn = params.get("min_value", 0.0)
+        mx = params.get("max_value", 100.0)
+        val = payload.requested_magnitude
+        if not (mn <= val <= mx):
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "error": "invalid_magnitude",
+                    "message": f"requested_magnitude {val} is outside the supported range [{mn}, {mx}].",
+                },
+            )
+        requested_magnitude = val
+
     try:
-        analysis = run_analysis(payload.scenario_key, payload.horizon)
+        analysis = run_analysis(
+            payload.scenario_key,
+            payload.horizon,
+            custom_holdings=custom_holdings,
+            requested_magnitude=requested_magnitude,
+        )
     except UnsupportedScenarioError as exc:
         raise HTTPException(
             status_code=400,

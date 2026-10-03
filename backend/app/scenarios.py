@@ -32,6 +32,10 @@ SYNTHETIC_CLIENT_NAME = "Demo Household (synthetic)"
 SUPPORTED_HORIZONS: tuple[str, ...] = ("1Y",)
 DEFAULT_HORIZON = "1Y"
 
+# Inflation scenario supports variable horizons (1–60 months)
+INFLATION_MIN_MONTHS = 1
+INFLATION_MAX_MONTHS = 60
+
 
 # --------------------------------------------------------------------------- #
 # Portfolio
@@ -102,6 +106,7 @@ class Scenario:
 
     aliases: tuple[str, ...] = ()
     valuation_basis: str = "nominal_market_value"
+    
 
     def shock_for(self, holding_id: str) -> Decimal:
         return self.shocks.get(holding_id, Decimal("0"))
@@ -430,10 +435,104 @@ def portfolio_payload() -> dict:
     }
 
 
+# ---------------------------------------------------------------------------
+# Parameter metadata for editable magnitudes
+# ---------------------------------------------------------------------------
+
+# Per-scenario parameter definitions for the UI
+_SCENARIO_PARAMS: dict[str, dict] = {
+    "market_crash": {
+        "param_label": "Market decline (%)",
+        "param_unit": "percent",
+        "default_value": 20.0,
+        "min_value": 1.0,
+        "max_value": 60.0,
+        "step": 1.0,
+        "direction": "down",
+        "methodology": (
+            "Illustrative linear sensitivity: each holding's return is scaled proportionally "
+            "to the requested magnitude relative to the baseline magnitude. "
+            "This is a prototype assumption, not a validated market model."
+        ),
+    },
+    "oil_shock": {
+        "param_label": "Crude oil price increase (%)",
+        "param_unit": "percent",
+        "default_value": 40.0,
+        "min_value": 5.0,
+        "max_value": 150.0,
+        "step": 5.0,
+        "direction": "up",
+        "methodology": (
+            "Illustrative linear sensitivity: each holding's return is scaled proportionally "
+            "to the requested crude oil price increase relative to the baseline 40% increase. "
+            "This is a prototype assumption, not a validated market model."
+        ),
+    },
+    "inflation": {
+        "param_label": "Annual inflation rate (%)",
+        "param_unit": "percent",
+        "default_value": 5.0,
+        "min_value": 0.0,
+        "max_value": 15.0,
+        "step": 0.5,
+        "direction": "flat_nominal",
+        "methodology": (
+            "Purchasing-power illustration: nominal portfolio value is held flat at 0% return. "
+            "Real value = nominal / (1 + annual_rate). "
+            "This is not an asset-return forecast."
+        ),
+    },
+    "rate_rise": {
+        "param_label": "Rate increase (percentage points)",
+        "param_unit": "percentage_points",
+        "default_value": 1.0,
+        "min_value": 0.25,
+        "max_value": 5.0,
+        "step": 0.25,
+        "direction": "up",
+        "methodology": (
+            "Illustrative linear sensitivity: each holding's return is scaled proportionally "
+            "to the requested rate increase (in percentage points) relative to the baseline 1pp. "
+            "This is a prototype assumption, not a validated market model."
+        ),
+    },
+    "tech_downturn": {
+        "param_label": "Technology sector decline (%)",
+        "param_unit": "percent",
+        "default_value": 30.0,
+        "min_value": 5.0,
+        "max_value": 80.0,
+        "step": 5.0,
+        "direction": "down",
+        "methodology": (
+            "Illustrative linear sensitivity: each holding's return is scaled proportionally "
+            "to the requested technology sector decline relative to the baseline 30% decline. "
+            "This is a prototype assumption, not a validated market model."
+        ),
+    },
+    "international_downturn": {
+        "param_label": "International equity decline (%)",
+        "param_unit": "percent",
+        "default_value": 20.0,
+        "min_value": 5.0,
+        "max_value": 60.0,
+        "step": 5.0,
+        "direction": "down",
+        "methodology": (
+            "Illustrative linear sensitivity: each holding's return is scaled proportionally "
+            "to the requested international equity decline relative to the baseline 20% decline. "
+            "This is a prototype assumption, not a validated market model."
+        ),
+    },
+}
+
+
 def scenario_catalog() -> list[dict]:
     """Preset catalogue — also used to 'offer the available preset' on mismatch."""
     out = []
     for s in SCENARIOS.values():
+        params = _SCENARIO_PARAMS.get(s.key, {})
         out.append(
             {
                 "scenario_key": s.key,
@@ -445,6 +544,15 @@ def scenario_catalog() -> list[dict]:
                 "valuation_basis": s.valuation_basis,
                 "assumptions_version": ASSUMPTIONS_VERSION,
                 "assumption_notes": list(s.assumption_notes),
+                # Editable parameter metadata
+                "param_label": params.get("param_label", ""),
+                "param_unit": params.get("param_unit", "percent"),
+                "param_default": params.get("default_value", float(s.headline_magnitude * 100)),
+                "param_min": params.get("min_value", 0.0),
+                "param_max": params.get("max_value", 100.0),
+                "param_step": params.get("step", 1.0),
+                "param_methodology": params.get("methodology", ""),
+                "baseline_magnitude": float(s.headline_magnitude),
             }
         )
     return out

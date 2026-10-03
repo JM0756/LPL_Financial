@@ -50,6 +50,15 @@ export interface ScenarioDefinition {
   /** Human-readable assumption bullets from backend */
   assumptionNotes: string[];
   kind: ScenarioKind;
+  // Editable parameter metadata
+  paramLabel: string;
+  paramUnit: string;
+  paramDefault: number;
+  paramMin: number;
+  paramMax: number;
+  paramStep: number;
+  paramMethodology: string;
+  baselineMagnitude: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -77,6 +86,7 @@ export interface AnalysisResult {
   kind: ScenarioKind;
   label: string;
   horizon: string;
+  horizonType?: "immediate_shock" | "purchasing_power_illustration";
   assumptionsVersion: string;
   explanation: string;
   explanationSource: ExplanationSource;

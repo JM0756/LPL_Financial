@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import "./App.css";
 import {
   analyzeScenario,
@@ -9,8 +9,18 @@ import {
   getScenarios,
   interpretQuestion,
 } from "./api";
+import { AccountManager } from "./components/AccountManager";
 import { AdvisorView } from "./components/AdvisorView";
 import { AnalysisResults } from "./components/AnalysisResults";
+import { MagnitudeControl } from "./components/MagnitudeControl";
+import { PortfolioPage } from "./components/PortfolioPage";
+import { ProfileManager } from "./components/ProfileManager";
+import {
+  getActiveAccount,
+  getActiveProfile,
+  type DemoAccount,
+  type DemoProfile,
+} from "./demo-storage";
 import type {
   AnalysisResult,
   InterpretResult,
@@ -25,7 +35,6 @@ const currencyFormatter = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 0,
 });
 
-// Stable color classes for up to 7 holdings by index
 const HOLDING_COLORS = [
   "holding-color-0",
   "holding-color-1",
@@ -37,16 +46,26 @@ const HOLDING_COLORS = [
 ];
 
 type DiscussState = { status: "idle" | "saving" | "saved" | "error"; error: string };
+type NavTab = "explore" | "portfolio" | "advisor";
 
 function App() {
+  // --- profile/account state ---
+  const [activeProfile, setActiveProfile] = useState<DemoProfile | null>(() => getActiveProfile());
+  const [activeAccount, setActiveAccount] = useState<DemoAccount | null>(() => getActiveAccount());
+
   // --- data loading ---
   const [portfolio, setPortfolio] = useState<Portfolio | null>(null);
   const [scenarios, setScenarios] = useState<ScenarioDefinition[]>([]);
   const [loadError, setLoadError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
 
+  // --- nav ---
+  const [navTab, setNavTab] = useState<NavTab>("explore");
+
   // --- scenario selection ---
   const [selectedKey, setSelectedKey] = useState<ScenarioKey | null>(null);
+  const [magnitude, setMagnitude] = useState<number | null>(null);
+  const [inflationHorizonMonths, setInflationHorizonMonths] = useState<number>(12);
   const [question, setQuestion] = useState("");
   const [questionStatus, setQuestionStatus] = useState("");
   const [isInterpreting, setIsInterpreting] = useState(false);
@@ -56,6 +75,15 @@ function App() {
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [analysisError, setAnalysisError] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  // Track config at analysis time to detect staleness
+  const [analysisConfigKey, setAnalysisConfigKey] = useState<string | null>(null);
+
+  function makeConfigKey() {
+    const holdingsKey = activeAccount?.customHoldings
+      ? activeAccount.customHoldings.map((h) => `${h.holdingId}:${h.value}`).join(",")
+      : "default";
+    return `${selectedKey}|${magnitude ?? "default"}|${inflationHorizonMonths}|${holdingsKey}`;
+  }
 
   // --- discuss ---
   const [discussState, setDiscussState] = useState<DiscussState>({ status: "idle", error: "" });
@@ -66,19 +94,22 @@ function App() {
   const [advisorQState, setAdvisorQState] = useState<AdvisorQState>({ status: "idle", error: "" });
   const advisorQIdempotencyRef = useRef("");
 
-  // --- view ---
-  const [advisorView, setAdvisorView] = useState(false);
-
   const requestIdRef = useRef(0);
-  const loadAbortRef = useRef<AbortController | null>(null);
+
+  const refreshDemoState = useCallback(() => {
+    setActiveProfile(getActiveProfile());
+    setActiveAccount(getActiveAccount());
+    // Invalidate analysis when account changes
+    setAnalysis(null);
+    setAnalysisError("");
+    setDiscussState({ status: "idle", error: "" });
+  }, []);
 
   // ---------------------------------------------------------------------------
   // Load portfolio + scenarios on mount
   // ---------------------------------------------------------------------------
   useEffect(() => {
     const ac = new AbortController();
-    loadAbortRef.current = ac;
-
     Promise.all([getPortfolio(ac.signal), getScenarios(ac.signal)])
       .then(([p, s]) => {
         setPortfolio(p);
@@ -86,12 +117,9 @@ function App() {
       })
       .catch((err: unknown) => {
         if (err instanceof DOMException && err.name === "AbortError") return;
-        setLoadError(
-          err instanceof Error ? err.message : "Could not load portfolio data.",
-        );
+        setLoadError(err instanceof Error ? err.message : "Could not load portfolio data.");
       })
       .finally(() => setIsLoading(false));
-
     return () => ac.abort();
   }, []);
 
@@ -103,6 +131,8 @@ function App() {
   function selectScenario(key: ScenarioKey) {
     requestIdRef.current += 1;
     setSelectedKey(key);
+    setMagnitude(null); // reset to default when switching scenarios
+    setInflationHorizonMonths(12);
     setAnalysis(null);
     setAnalysisError("");
     setQuestionStatus("");
@@ -114,6 +144,8 @@ function App() {
   function clearSelection() {
     requestIdRef.current += 1;
     setSelectedKey(null);
+    setMagnitude(null);
+    setInflationHorizonMonths(12);
     setAnalysis(null);
     setAnalysisError("");
     setInterpretResult(null);
@@ -129,17 +161,13 @@ function App() {
       setQuestionStatus("Enter a market question or choose a supported scenario.");
       return;
     }
-
     setIsInterpreting(true);
     setQuestionStatus("");
     setInterpretResult(null);
-
     try {
       const result = await interpretQuestion(question.trim());
       setInterpretResult(result);
-
       if (result.status === "matched" && result.scenarioKey) {
-        // Pre-select but don't auto-analyze — user must still confirm
         setSelectedKey(result.scenarioKey);
         setAnalysis(null);
         setAnalysisError("");
@@ -159,7 +187,6 @@ function App() {
   // ---------------------------------------------------------------------------
   async function handleSendToAdvisor() {
     if (!question.trim() || advisorQState.status === "saving" || advisorQState.status === "saved") return;
-    // Generate a stable idempotency key for this question on first attempt
     if (!advisorQIdempotencyRef.current) {
       advisorQIdempotencyRef.current = `aq_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     }
@@ -184,21 +211,38 @@ function App() {
   // ---------------------------------------------------------------------------
   async function handleAnalyze() {
     if (!selectedKey || !selectedScenario) return;
-
     const requestId = ++requestIdRef.current;
     setIsAnalyzing(true);
     setAnalysis(null);
     setAnalysisError("");
     setDiscussState({ status: "idle", error: "" });
 
+    // Build custom holdings from active account if set
+    const customHoldings = activeAccount?.customHoldings ?? null;
+    // Use magnitude override if set and different from default
+    const magnitudeOverride =
+      magnitude !== null && selectedScenario && magnitude !== selectedScenario.paramDefault
+        ? magnitude
+        : null;
+
+    // For inflation, use the editable horizon; for others, use the preset horizon
+    const horizonToUse = selectedScenario.kind === "purchasing-power"
+      ? `${inflationHorizonMonths}M`
+      : selectedScenario.horizon;
+
     try {
       const result = await analyzeScenario(
         selectedKey,
-        selectedScenario.horizon,
+        horizonToUse,
         interpretResult?.status !== "unsupported" ? (question.trim() || null) : null,
+        customHoldings
+          ? customHoldings.map((h) => ({ holdingId: h.holdingId, value: h.value }))
+          : null,
+        magnitudeOverride,
       );
       if (requestId !== requestIdRef.current) return;
       setAnalysis(result);
+      setAnalysisConfigKey(makeConfigKey());
       window.setTimeout(() => {
         document.getElementById("analysis-results")?.scrollIntoView({ behavior: "smooth", block: "start" });
       }, 0);
@@ -235,6 +279,8 @@ function App() {
   function handleTryAnother() {
     requestIdRef.current += 1;
     setSelectedKey(null);
+    setMagnitude(null);
+    setInflationHorizonMonths(12);
     setAnalysis(null);
     setAnalysisError("");
     setQuestion("");
@@ -245,49 +291,127 @@ function App() {
   }
 
   // ---------------------------------------------------------------------------
-  // Render
+  // Render — profile gate
   // ---------------------------------------------------------------------------
+  if (!activeProfile) {
+    return (
+      <ProfileManager activeProfile={null} onProfileChange={refreshDemoState} />
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Render — main app
+  // ---------------------------------------------------------------------------
+  const displayPortfolio = activeAccount?.customHoldings
+    ? {
+        ...portfolio,
+        totalValue: activeAccount.customHoldings.reduce((s, h) => s + h.value, 0),
+        holdings: activeAccount.customHoldings.map((h) => ({
+          identifier: h.holdingId,
+          name: h.holdingId.replace(/_/g, " "),
+          assetClass: "",
+          sector: "",
+          value: h.value,
+          allocation: 0,
+        })),
+      }
+    : portfolio;
+
+  // Compute allocations for display
+  if (displayPortfolio?.holdings && displayPortfolio.totalValue > 0) {
+    displayPortfolio.holdings = displayPortfolio.holdings.map((h) => ({
+      ...h,
+      allocation: (h.value / displayPortfolio.totalValue) * 100,
+    }));
+  }
+
   return (
     <div className="app-shell">
       <header className="site-header">
-        <a className="brand" href="#main-content" aria-label="ScenarioCraft home">
-          <span className="brand-mark" aria-hidden="true">SC</span>
-          <span>
-            <span className="brand-name">ScenarioCraft</span>
-            <span className="brand-subtitle">Investor demo</span>
-          </span>
-        </a>
+        <div className="site-header-inner">
+          <a className="brand" href="#main-content" aria-label="WealthLens home">
+            <span className="brand-logo" aria-hidden="true">
+              <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" width="36" height="36">
+                <circle cx="20" cy="20" r="18" stroke="#e8f0f8" strokeWidth="2.5" fill="#102B46"/>
+                <circle cx="20" cy="20" r="11" fill="#1a4a6b"/>
+                <circle cx="20" cy="20" r="6.5" fill="#2563a8"/>
+                <circle cx="20" cy="20" r="3" fill="#60a5d8"/>
+                <ellipse cx="16.5" cy="16.5" rx="2.5" ry="1.6" fill="white" opacity="0.3" transform="rotate(-20 16.5 16.5)"/>
+                <circle cx="24" cy="16" r="1" fill="white" opacity="0.45"/>
+              </svg>
+            </span>
+            <span className="brand-name">WealthLens</span>
+          </a>
 
-        <div className="header-actions">
-          {API_MODE === "mock" && <span className="mock-mode-label">Demo data</span>}
-          <span className="demo-label">Educational prototype</span>
-          <button
-            className={`view-switch ${advisorView ? "view-switch-active" : ""}`}
-            type="button"
-            onClick={() => setAdvisorView((v) => !v)}
-          >
-            {advisorView ? "Investor view" : "Advisor view"}
-          </button>
+          <nav className="main-nav-inline" aria-label="Main navigation">
+            <button
+              className={`nav-tab ${navTab === "explore" ? "nav-tab-active" : ""}`}
+              type="button"
+              onClick={() => setNavTab("explore")}
+            >Explore</button>
+            <button
+              className={`nav-tab ${navTab === "portfolio" ? "nav-tab-active" : ""}`}
+              type="button"
+              onClick={() => setNavTab("portfolio")}
+            >Holdings</button>
+            <button
+              className={`nav-tab ${navTab === "advisor" ? "nav-tab-active" : ""}`}
+              type="button"
+              onClick={() => setNavTab("advisor")}
+            >Advisor View</button>
+          </nav>
+
+          <div className="header-right">
+            {API_MODE === "mock" && <span className="mock-mode-label">Demo data</span>}
+            <ProfileManager activeProfile={activeProfile} onProfileChange={refreshDemoState} />
+          </div>
         </div>
       </header>
 
+      {/* Portfolio toolbar */}
+      {activeProfile && (
+        <div className="account-bar">
+          <div className="account-bar-inner">
+            <AccountManager
+              profile={activeProfile}
+              onAccountChange={refreshDemoState}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Mobile nav (hidden on desktop via CSS) */}
+      <div className="mobile-nav" aria-label="Main navigation">
+        <div className="mobile-nav-inner">
+          <button className={`nav-tab ${navTab === "explore" ? "nav-tab-active" : ""}`} type="button" onClick={() => setNavTab("explore")}>Explore</button>
+          <button className={`nav-tab ${navTab === "portfolio" ? "nav-tab-active" : ""}`} type="button" onClick={() => setNavTab("portfolio")}>Holdings</button>
+          <button className={`nav-tab ${navTab === "advisor" ? "nav-tab-active" : ""}`} type="button" onClick={() => setNavTab("advisor")}>Advisor View</button>
+        </div>
+      </div>
+
       <main id="main-content" className="main-content">
-        {advisorView ? (
+        {navTab === "advisor" ? (
           <AdvisorView />
+        ) : navTab === "portfolio" && activeAccount ? (
+          <PortfolioPage
+            account={activeAccount}
+            onSave={() => {
+              refreshDemoState();
+              // Invalidate analysis since portfolio changed
+              setAnalysis(null);
+              setAnalysisError("");
+            }}
+          />
         ) : (
           <>
             <section className="intro-section" aria-labelledby="page-title">
-              <p className="eyebrow">Portfolio scenario explorer</p>
-              <h1 id="page-title">
-                Ask "What if?" Understand what it means for your portfolio.
-              </h1>
+              <h1 id="page-title">See your portfolio from a new perspective.</h1>
               <p className="intro-copy">
-                Explore predefined market conditions and see their illustrative effect on a
-                synthetic portfolio.
+                Explore a market change, understand its potential impact, and prepare
+                for your next advisor conversation.
               </p>
             </section>
 
-            {/* Loading / error state for initial data */}
             {isLoading && (
               <div className="loading-state" role="status">
                 Loading portfolio data…
@@ -298,11 +422,7 @@ function App() {
               <div className="error-message" role="alert">
                 <strong>Could not load portfolio</strong>
                 <span>{loadError}</span>
-                <button
-                  className="text-button"
-                  type="button"
-                  onClick={() => window.location.reload()}
-                >
+                <button className="text-button" type="button" onClick={() => window.location.reload()}>
                   Reload page
                 </button>
               </div>
@@ -314,35 +434,57 @@ function App() {
                 <aside className="portfolio-card" aria-labelledby="portfolio-title">
                   <div className="card-heading">
                     <div>
-                      <p className="section-kicker">Synthetic portfolio</p>
-                      <h2 id="portfolio-title">Your starting point</h2>
+                      <p className="section-kicker">
+                        {activeAccount?.customHoldings ? "Custom portfolio" : "Synthetic portfolio"}
+                      </p>
+                      <h2 id="portfolio-title">{activeAccount?.name ?? "Your starting point"}</h2>
                     </div>
-                    <span className="portfolio-badge">Demo</span>
+                    <span className="portfolio-badge">
+                      {activeAccount?.customHoldings ? "Custom" : "Demo"}
+                    </span>
                   </div>
 
                   <div className="portfolio-total">
                     <span>Current value</span>
-                    <strong>{currencyFormatter.format(portfolio.totalValue)}</strong>
+                    <strong>
+                      {currencyFormatter.format(
+                        activeAccount?.customHoldings
+                          ? activeAccount.customHoldings.reduce((s, h) => s + h.value, 0)
+                          : portfolio.totalValue
+                      )}
+                    </strong>
                   </div>
 
-                  {/* Allocation bar — proportional widths from backend data */}
+                  {/* Allocation bar */}
                   <div className="allocation-bar" aria-hidden="true">
-                    {portfolio.holdings.map((h, i) => (
+                    {(activeAccount?.customHoldings
+                      ? activeAccount.customHoldings.map((h) => ({
+                          identifier: h.holdingId,
+                          allocation: (h.value / activeAccount.customHoldings!.reduce((s, x) => s + x.value, 0)) * 100,
+                        }))
+                      : portfolio.holdings
+                    ).map((h, _i) => (
                       <span
                         key={h.identifier}
-                        className={HOLDING_COLORS[i % HOLDING_COLORS.length]}
+                        className={HOLDING_COLORS[_i % HOLDING_COLORS.length]}
                         style={{ width: `${h.allocation}%` }}
                       />
                     ))}
                   </div>
 
                   <ul className="holdings-list">
-                    {portfolio.holdings.map((h, i) => (
+                    {(activeAccount?.customHoldings
+                      ? activeAccount.customHoldings.map((h) => ({
+                          identifier: h.holdingId,
+                          name: h.holdingId.replace(/_/g, " "),
+                          assetClass: "",
+                          value: h.value,
+                          allocation: (h.value / activeAccount.customHoldings!.reduce((s, x) => s + x.value, 0)) * 100,
+                        }))
+                      : portfolio.holdings
+                    ).map((h, _i) => (
                       <li key={h.identifier} className="holding-row">
-                        <span
-                          className={`holding-dot ${HOLDING_COLORS[i % HOLDING_COLORS.length]}`}
-                          aria-hidden="true"
-                        />
+                        <span className={`holding-dot ${HOLDING_COLORS[_i % HOLDING_COLORS.length]}`} aria-hidden="true" />
                         <span className="holding-identity">
                           <strong>{h.name}</strong>
                           <span>{h.assetClass}</span>
@@ -356,9 +498,18 @@ function App() {
                   </ul>
 
                   <p className="portfolio-note">
-                    This fictional portfolio is used consistently across all ScenarioCraft
-                    demonstrations.
+                    {activeAccount?.customHoldings
+                      ? "Custom portfolio saved in your browser. Edit it on the Portfolio tab."
+                      : "This fictional portfolio is used consistently across all WealthLens demonstrations. All values are synthetic."}
                   </p>
+
+                  <button
+                    className="text-button portfolio-edit-link"
+                    type="button"
+                    onClick={() => setNavTab("portfolio")}
+                  >
+                    Edit holdings →
+                  </button>
                 </aside>
 
                 {/* Scenario panel */}
@@ -388,11 +539,7 @@ function App() {
                         placeholder="For example: What if the market crashes?"
                         rows={2}
                       />
-                      <button
-                        className="secondary-button"
-                        type="submit"
-                        disabled={isInterpreting}
-                      >
+                      <button className="secondary-button" type="submit" disabled={isInterpreting}>
                         {isInterpreting ? "Interpreting…" : "Interpret question"}
                       </button>
                     </div>
@@ -479,34 +626,32 @@ function App() {
                           </div>
                         )}
 
-                        {interpretResult.status === "preset_offered" &&
-                          interpretResult.scenarioKey && (
-                            <>
-                              <p className="interpret-confirm-note">
-                                Select the preset below to review its exact assumptions before
-                                running the analysis.
-                              </p>
-                              <div className="advisor-handoff-panel advisor-handoff-panel-inline">
-                                <p className="advisor-handoff-heading">Or send your original question to your advisor instead.</p>
-                                {advisorQState.status !== "saved" && (
-                                  <button
-                                    className="text-button"
-                                    type="button"
-                                    onClick={handleSendToAdvisor}
-                                    disabled={advisorQState.status === "saving"}
-                                  >
-                                    {advisorQState.status === "saving" ? "Saving…" : "Send question to advisor"}
-                                  </button>
-                                )}
-                                {advisorQState.status === "saved" && (
-                                  <p className="advisor-q-success" role="status">Question saved.</p>
-                                )}
-                                {advisorQState.status === "error" && (
-                                  <span className="advisor-q-error">{advisorQState.error} <button className="text-button" type="button" onClick={handleSendToAdvisor}>Retry</button></span>
-                                )}
-                              </div>
-                            </>
-                          )}
+                        {interpretResult.status === "preset_offered" && interpretResult.scenarioKey && (
+                          <>
+                            <p className="interpret-confirm-note">
+                              Select the preset below to review its exact assumptions before running the analysis.
+                            </p>
+                            <div className="advisor-handoff-panel advisor-handoff-panel-inline">
+                              <p className="advisor-handoff-heading">Or send your original question to your advisor instead.</p>
+                              {advisorQState.status !== "saved" && (
+                                <button
+                                  className="text-button"
+                                  type="button"
+                                  onClick={handleSendToAdvisor}
+                                  disabled={advisorQState.status === "saving"}
+                                >
+                                  {advisorQState.status === "saving" ? "Saving…" : "Send question to advisor"}
+                                </button>
+                              )}
+                              {advisorQState.status === "saved" && (
+                                <p className="advisor-q-success" role="status">Question saved.</p>
+                              )}
+                              {advisorQState.status === "error" && (
+                                <span className="advisor-q-error">{advisorQState.error} <button className="text-button" type="button" onClick={handleSendToAdvisor}>Retry</button></span>
+                              )}
+                            </div>
+                          </>
+                        )}
                       </div>
                     )}
                   </form>
@@ -562,6 +707,69 @@ function App() {
                         </p>
                       )}
 
+                      <MagnitudeControl
+                        scenario={selectedScenario}
+                        value={magnitude ?? selectedScenario.paramDefault}
+                        onChange={(v) => {
+                          setMagnitude(v);
+                          setAnalysis(null);
+                          setAnalysisError("");
+                        }}
+                      />
+
+                      {selectedScenario.kind === "purchasing-power" ? (
+                        <div className="horizon-control">
+                          <label className="magnitude-label" htmlFor="inflation-horizon">
+                            Horizon (months)
+                          </label>
+                          <div className="magnitude-input-row">
+                            <input
+                              type="range"
+                              className="magnitude-slider"
+                              id="inflation-horizon"
+                              min={1}
+                              max={60}
+                              step={1}
+                              value={inflationHorizonMonths}
+                              onChange={(e) => {
+                                setInflationHorizonMonths(parseInt(e.target.value, 10));
+                                setAnalysis(null);
+                                setAnalysisError("");
+                              }}
+                            />
+                            <div className="magnitude-number-wrap">
+                              <input
+                                type="number"
+                                className="magnitude-number-input"
+                                min={1}
+                                max={60}
+                                step={1}
+                                value={inflationHorizonMonths}
+                                onChange={(e) => {
+                                  const v = Math.min(60, Math.max(1, parseInt(e.target.value, 10) || 1));
+                                  setInflationHorizonMonths(v);
+                                  setAnalysis(null);
+                                  setAnalysisError("");
+                                }}
+                                aria-label="Horizon in months"
+                              />
+                              <span className="magnitude-unit">mo</span>
+                            </div>
+                          </div>
+                          <div className="magnitude-range-labels"><span>1 mo</span><span>60 mo</span></div>
+                          <p className="magnitude-pp-note">
+                            Horizon only applies to the purchasing-power illustration.
+                            Formula: real value = nominal ÷ (1 + annual rate)^(months ÷ 12).
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="horizon-disabled-note">
+                          <strong>Horizon:</strong> Immediate shock — this scenario models an
+                          instantaneous asset-price repricing, not a time-compounded return.
+                          A time-dependent method is not yet implemented for this scenario type.
+                        </div>
+                      )}
+
                       <ul className="assumption-list">
                         {selectedScenario.assumptionNotes.map((note) => (
                           <li key={note}>{note}</li>
@@ -598,13 +806,24 @@ function App() {
             )}
 
             {analysis && selectedScenario && (
-              <AnalysisResults
-                result={analysis}
-                scenario={selectedScenario}
-                discussState={discussState}
-                onDiscuss={handleDiscuss}
-                onTryAnother={handleTryAnother}
-              />
+              <>
+                {analysisConfigKey && analysisConfigKey !== makeConfigKey() && (
+                  <div className="stale-result-banner" role="alert">
+                    <strong>Configuration changed.</strong> The result below is from a previous
+                    run. Re-run the analysis to see updated results.
+                    <button className="text-button" type="button" onClick={handleAnalyze}>
+                      Re-run now
+                    </button>
+                  </div>
+                )}
+                <AnalysisResults
+                  result={analysis}
+                  scenario={selectedScenario}
+                  discussState={discussState}
+                  onDiscuss={handleDiscuss}
+                  onTryAnother={handleTryAnother}
+                />
+              </>
             )}
 
             <p className="disclosure">
@@ -616,8 +835,8 @@ function App() {
       </main>
 
       <footer className="site-footer">
-        <span>ScenarioCraft</span>
-        <span>University hackathon educational prototype</span>
+        <span>WealthLens</span>
+        <span>Demo · Synthetic data only · Not investment advice · Browser-local storage</span>
       </footer>
     </div>
   );

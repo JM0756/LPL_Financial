@@ -123,6 +123,14 @@ function adaptScenarioDefinition(raw: Record<string, unknown>): ScenarioDefiniti
     assumptionsVersion: typeof raw["assumptions_version"] === "string" ? raw["assumptions_version"] : "",
     assumptionNotes: Array.isArray(raw["assumption_notes"]) ? raw["assumption_notes"] as string[] : [],
     kind: valuationBasis === "real_purchasing_power" ? "purchasing-power" : "market",
+    paramLabel: typeof raw["param_label"] === "string" ? raw["param_label"] : "Magnitude",
+    paramUnit: typeof raw["param_unit"] === "string" ? raw["param_unit"] : "percent",
+    paramDefault: typeof raw["param_default"] === "number" ? raw["param_default"] : 0,
+    paramMin: typeof raw["param_min"] === "number" ? raw["param_min"] : 0,
+    paramMax: typeof raw["param_max"] === "number" ? raw["param_max"] : 100,
+    paramStep: typeof raw["param_step"] === "number" ? raw["param_step"] : 1,
+    paramMethodology: typeof raw["param_methodology"] === "string" ? raw["param_methodology"] : "",
+    baselineMagnitude: typeof raw["baseline_magnitude"] === "number" ? raw["baseline_magnitude"] : 0,
   };
 }
 
@@ -165,6 +173,7 @@ function adaptAnalysisResult(raw: Record<string, unknown>): AnalysisResult {
     kind: (isPurchasingPower ? "purchasing-power" : "market") as "market" | "purchasing-power",
     label: typeof raw["scenario_label"] === "string" ? raw["scenario_label"] : scenarioKey,
     horizon: typeof raw["horizon"] === "string" ? raw["horizon"] : "",
+    horizonType: (raw["horizon_type"] as AnalysisResult["horizonType"]) ?? undefined,
     assumptionsVersion: typeof raw["assumptions_version"] === "string" ? raw["assumptions_version"] : "",
     explanation: typeof raw["explanation"] === "string" ? raw["explanation"] : "",
     explanationSource: adaptExplanationSource(raw["explanation_source"]),
@@ -292,6 +301,8 @@ export async function analyzeScenario(
   scenarioKey: ScenarioKey,
   horizon: string,
   originalQuestion: string | null,
+  customHoldings?: Array<{ holdingId: string; value: number }> | null,
+  requestedMagnitude?: number | null,
   signal?: AbortSignal,
 ): Promise<AnalysisResult> {
   if (API_MODE === "mock") {
@@ -306,6 +317,15 @@ export async function analyzeScenario(
     confirmed: true,
   };
   if (originalQuestion) body["question"] = originalQuestion;
+  if (customHoldings && customHoldings.length > 0) {
+    body["custom_portfolio"] = customHoldings.map((h) => ({
+      holding_id: h.holdingId,
+      value: h.value,
+    }));
+  }
+  if (requestedMagnitude != null) {
+    body["requested_magnitude"] = requestedMagnitude;
+  }
 
   const raw = await apiFetch<Record<string, unknown>>("/api/analyze", {
     method: "POST",

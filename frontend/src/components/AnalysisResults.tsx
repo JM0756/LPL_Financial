@@ -37,6 +37,16 @@ function explanationSourceLabel(source: AnalysisResult["explanationSource"]): st
   return "Explanation (source unconfirmed)";
 }
 
+/** Extract up to 3 sentence-level driver bullets from the explanation text. */
+function extractDrivers(explanation: string): string[] {
+  // Split on sentence boundaries, take first 3 non-trivial sentences
+  return explanation
+    .split(/(?<=[.!?])\s+/)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 30)
+    .slice(0, 3);
+}
+
 export function AnalysisResults({
   result,
   scenario,
@@ -53,10 +63,12 @@ export function AnalysisResults({
         ? "Discussion request created"
         : "Discuss with my advisor";
 
+  const drivers = extractDrivers(result.explanation);
+
   return (
     <section
       id="analysis-results"
-      className="results-card"
+      className="results-card results-card-enter"
       aria-labelledby="results-title"
       aria-live="polite"
     >
@@ -64,16 +76,32 @@ export function AnalysisResults({
         <div>
           <p className="section-kicker">Illustrative result</p>
           <h2 id="results-title">{result.label}</h2>
-          <p>Horizon: {result.horizon}</p>
+          <p>
+            {result.horizonType === "immediate_shock"
+              ? "Immediate shock · " + result.horizon + " stored horizon"
+              : "Horizon: " + result.horizon}
+          </p>
         </div>
         <span className="result-status">Analysis complete</span>
       </div>
 
+      {/* ── Concise numerical summary ── */}
       {isPurchasingPower ? (
         <>
           <div className="inflation-notice">
             <strong>Purchasing-power illustration</strong>
             <span>This is not an asset-return forecast or an investment loss.</span>
+          </div>
+
+          <div className="result-summary-banner">
+            <span className="summary-label">Purchasing-power change</span>
+            <strong className="summary-number number-negative">
+              {signedCurrency(result.purchasingPowerChangeDollars ?? 0, true)}
+            </strong>
+            <span className="summary-sub">
+              {signedPercent(result.purchasingPowerChangePercent ?? 0)} &nbsp;·&nbsp;
+              Nominal value held at {wholeDollar.format(result.nominalValue ?? 0)}
+            </span>
           </div>
 
           <div className="result-metrics result-metrics-inflation">
@@ -100,6 +128,18 @@ export function AnalysisResults({
         </>
       ) : (
         <>
+          {/* Single-line headline summary */}
+          <div className="result-summary-banner">
+            <span className="summary-label">Portfolio impact</span>
+            <strong className={`summary-number ${(result.impactDollars ?? 0) < 0 ? "number-negative" : "number-positive"}`}>
+              {signedCurrency(result.impactDollars ?? 0)}
+            </strong>
+            <span className="summary-sub">
+              {signedPercent(result.impactPercent ?? 0)} &nbsp;·&nbsp;
+              {wholeDollar.format(result.currentValue ?? 0)} → {wholeDollar.format(result.scenarioValue ?? 0)}
+            </span>
+          </div>
+
           <div className="result-metrics">
             <div className="metric">
               <span>Current portfolio value</span>
@@ -122,19 +162,28 @@ export function AnalysisResults({
         </>
       )}
 
-      <section className="explanation-card" aria-labelledby="explanation-title">
-        <p className="section-kicker">In plain language</p>
-        <h3 id="explanation-title">Why does this affect me?</h3>
-        <p>{result.explanation}</p>
-        <span className="explanation-source">
-          {explanationSourceLabel(result.explanationSource)}
-        </span>
-      </section>
+      {/* ── Key drivers ── */}
+      {drivers.length > 0 && (
+        <section className="drivers-section" aria-labelledby="drivers-title">
+          <h3 id="drivers-title" className="drivers-heading">Key drivers</h3>
+          <ul className="drivers-list">
+            {drivers.map((d, i) => (
+              <li key={i}>{d}</li>
+            ))}
+          </ul>
+          <span className="explanation-source">
+            {explanationSourceLabel(result.explanationSource)}
+          </span>
+        </section>
+      )}
 
+      {/* ── Expandable assumptions & methodology ── */}
       <details className="assumptions-details">
-        <summary>Review assumptions and horizon</summary>
+        <summary>Assumptions &amp; methodology</summary>
         <div>
+          <p><strong>Scenario:</strong> {scenario.label}</p>
           <p><strong>Horizon:</strong> {result.horizon}</p>
+          <p><strong>Magnitude:</strong> {scenario.magnitudeLabel}</p>
           <ul>
             {scenario.assumptionNotes.map((note) => (
               <li key={note}>{note}</li>
