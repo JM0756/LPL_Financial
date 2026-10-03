@@ -357,6 +357,12 @@
   border-color: #8f4519;
 }
 
+.primary-button:disabled,
+.secondary-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .secondary-button {
   flex: 0 0 auto;
   border: 1px solid var(--color-border-strong);
@@ -2130,6 +2136,48 @@ a:focus-visible {
   color: #7a5c1e;
 }
 
+.portfolio-quick-scale {
+  margin: 20px 0;
+  padding: 16px;
+  background: var(--color-surface-alt);
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+}
+
+.portfolio-quick-scale label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--color-navy);
+}
+
+.portfolio-quick-scale-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.portfolio-quick-scale-input {
+  flex: 1;
+  max-width: 200px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font-size: 1rem;
+}
+
+.portfolio-quick-scale-input:focus {
+  outline: none;
+  border-color: var(--color-teal);
+  box-shadow: 0 0 0 2px var(--color-teal-soft);
+}
+
+.portfolio-quick-scale-hint {
+  margin: 8px 0 0;
+  font-size: 0.8rem;
+  color: var(--color-muted);
+}
+
 .portfolio-edit-grid {
   display: grid;
   gap: 10px;
@@ -3154,6 +3202,12 @@ a:focus-visible {
   border: 1px solid var(--color-border);
   border-radius: 10px;
   background: var(--color-white);
+}
+
+.cmp-diff-metric-merged {
+  grid-column: 1 / -1;
+  text-align: center;
+  background: var(--color-surface-alt);
 }
 
 .cmp-diff-metric span,

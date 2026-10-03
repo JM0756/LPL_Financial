@@ -144,6 +144,34 @@ def utc_now_iso() -> str:
 # --------------------------------------------------------------------------- #
 # Custom portfolio validation
 # --------------------------------------------------------------------------- #
+def scale_portfolio_to_total(target_total: float) -> dict[str, Decimal]:
+    """
+    Scale the default synthetic portfolio proportionally to a new total value.
+    Returns a dict mapping holding_id -> Decimal value.
+    """
+    target = Decimal(str(target_total))
+    if target <= 0 or target > MAX_PORTFOLIO_TOTAL:
+        raise ValueError(
+            f"Portfolio total must be between $1 and ${MAX_PORTFOLIO_TOTAL:,.0f}."
+        )
+    
+    scale_factor = target / PORTFOLIO_TOTAL
+    result: dict[str, Decimal] = {}
+    
+    for h in PORTFOLIO:
+        scaled_value = money(h.value * scale_factor)
+        result[h.holding_id] = scaled_value
+    
+    # Reconcile to ensure exact total (handles rounding)
+    raw_values = [result[h.holding_id] for h in PORTFOLIO]
+    reconciled = _reconcile_to_total(raw_values, money(target))
+    
+    for i, h in enumerate(PORTFOLIO):
+        result[h.holding_id] = reconciled[i]
+    
+    return result
+
+
 def validate_custom_portfolio(raw: list[dict]) -> dict:
     """
     Validate a client-supplied custom portfolio.

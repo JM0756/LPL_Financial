@@ -89,15 +89,14 @@ def _get_key(kid: str) -> dict[str, Any]:
 # Token validation
 # ---------------------------------------------------------------------------
 
-def _validate_token(token: str) -> dict[str, Any]:
-    """Validate a Cognito access token. Returns the verified claims."""
+def _validate_token(token: str, expected_use: str = "access") -> dict[str, Any]:
+    """Validate a Cognito token. Returns the verified claims."""
     try:
         from jose import jwt, JWTError, ExpiredSignatureError
     except ImportError:
         raise HTTPException(status_code=500, detail="JWT library not installed.")
 
     try:
-        # Decode header without verification to get kid
         header = jwt.get_unverified_header(token)
     except Exception:
         raise HTTPException(status_code=401, detail="Invalid token format.")
@@ -114,20 +113,24 @@ def _validate_token(token: str) -> dict[str, Any]:
             key,
             algorithms=["RS256"],
             issuer=_ISSUER,
-            options={"verify_aud": False},  # Cognito access tokens use client_id, not aud
+            options={"verify_aud": False},  # Cognito tokens use client_id, not aud
         )
     except ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token has expired.")
     except JWTError as exc:
         raise HTTPException(status_code=401, detail=f"Token validation failed: {exc}")
 
-    # token_use must be "access"
-    if claims.get("token_use") != "access":
-        raise HTTPException(status_code=401, detail="Invalid token_use claim.")
+    # Validate token_use
+    if claims.get("token_use") != expected_use:
+        raise HTTPException(status_code=401, detail=f"Invalid token_use claim (expected {expected_use}).")
 
-    # client_id must match our app client
-    if COGNITO_CLIENT_ID and claims.get("client_id") != COGNITO_CLIENT_ID:
-        raise HTTPException(status_code=401, detail="Token client_id mismatch.")
+    # For access tokens, client_id must match; for ID tokens, aud must match
+    if expected_use == "access":
+        if COGNITO_CLIENT_ID and claims.get("client_id") != COGNITO_CLIENT_ID:
+            raise HTTPException(status_code=401, detail="Token client_id mismatch.")
+    else:  # id token
+        if COGNITO_CLIENT_ID and claims.get("aud") != COGNITO_CLIENT_ID:
+            raise HTTPException(status_code=401, detail="Token aud mismatch.")
 
     return claims
 
@@ -164,6 +167,11 @@ _DEMO_IDENTITY = VerifiedIdentity(
 _bearer = HTTPBearer(auto_error=False)
 
 
+def _extract_id_token(request: Request) -> str | None:
+    """Extract ID token from X-Id-Token header if present."""
+    return request.headers.get("X-Id-Token")
+
+
 async def get_identity(
     request: Request,
     credentials: HTTPAuthorizationCredentials | None = Depends(_bearer),
@@ -174,7 +182,9 @@ async def get_identity(
     When AUTH_ENABLED=False, returns the synthetic demo identity without
     checking any token — preserving existing demo behaviour.
 
-    When AUTH_ENABLED=True, requires a valid Bearer token.
+    When AUTH_ENABLED=True, requires a valid Bearer token (access token).
+    Groups are extracted from the ID token (X-Id-Token header) since Cognito
+    access tokens do not contain cognito:groups.
     """
     if not AUTH_ENABLED:
         return _DEMO_IDENTITY
@@ -186,12 +196,26 @@ async def get_identity(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    claims = _validate_token(credentials.credentials)
-    sub = claims.get("sub", "")
-    email = claims.get("email") or claims.get("username")
-    groups: list[str] = claims.get("cognito:groups", [])
+    # Validate access token
+    access_claims = _validate_token(credentials.credentials, expected_use="access")
+    sub = access_claims.get("sub", "")
+    email = access_claims.get("email") or access_claims.get("username")
+    
+    # Extract groups from ID token (cognito:groups is only in ID tokens)
+    groups: list[str] = []
+    id_token = _extract_id_token(request)
+    if id_token:
+        try:
+            id_claims = _validate_token(id_token, expected_use="id")
+            groups = id_claims.get("cognito:groups", [])
+            # Also get email from ID token if not in access token
+            if not email:
+                email = id_claims.get("email")
+        except HTTPException:
+            # ID token validation failed — continue without groups
+            logger.warning("ID token validation failed, proceeding without groups")
 
-    return VerifiedIdentity(sub=sub, email=email, groups=groups, claims=claims)
+    return VerifiedIdentity(sub=sub, email=email, groups=groups, claims=access_claims)
 
 
 def require_advisor(identity: VerifiedIdentity = Depends(get_identity)) -> VerifiedIdentity:

@@ -69,7 +69,11 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const authHeaders: Record<string, string> = {};
   if (AUTH_ENABLED) {
     const session = getStoredSession();
-    if (session) authHeaders["Authorization"] = `Bearer ${session.accessToken}`;
+    if (session) {
+      authHeaders["Authorization"] = `Bearer ${session.accessToken}`;
+      // Send ID token separately for group extraction (cognito:groups is only in ID tokens)
+      authHeaders["X-Id-Token"] = session.idToken;
+    }
   }
   const response = await fetch(`${API_BASE_URL}${path}`, {
     headers: {
@@ -332,12 +336,32 @@ export async function analyzeScenario(
   originalQuestion: string | null,
   customHoldings?: Array<{ holdingId: string; value: number }> | null,
   requestedMagnitude?: number | null,
+  portfolioTotal?: number | null,
   signal?: AbortSignal,
 ): Promise<AnalysisResult> {
   if (API_MODE === "mock") {
     await wait(650, signal);
     const fixture = (analysisFixtures as Record<string, AnalysisResult>)[scenarioKey];
     if (!fixture) throw new Error(`No mock fixture for scenario: ${scenarioKey}`);
+    // Scale mock results if portfolioTotal is provided
+    if (portfolioTotal && fixture.currentValue) {
+      const scale = portfolioTotal / 100_000;
+      const scaled = structuredClone(fixture);
+      if (scaled.currentValue) scaled.currentValue = Math.round(scaled.currentValue * scale);
+      if (scaled.scenarioValue) scaled.scenarioValue = Math.round(scaled.scenarioValue * scale);
+      if (scaled.impactDollars) scaled.impactDollars = Math.round(scaled.impactDollars * scale);
+      if (scaled.nominalValue) scaled.nominalValue = Math.round(scaled.nominalValue * scale);
+      if (scaled.purchasingPowerValue) scaled.purchasingPowerValue = Math.round(scaled.purchasingPowerValue * scale);
+      if (scaled.purchasingPowerChangeDollars) scaled.purchasingPowerChangeDollars = Math.round(scaled.purchasingPowerChangeDollars * scale);
+      if (scaled.holdings) {
+        scaled.holdings = scaled.holdings.map(h => ({
+          ...h,
+          startingValue: Math.round(h.startingValue * scale),
+          contributionDollars: Math.round(h.contributionDollars * scale),
+        }));
+      }
+      return scaled;
+    }
     return structuredClone(fixture);
   }
   const body: Record<string, unknown> = {
@@ -351,6 +375,9 @@ export async function analyzeScenario(
       holding_id: h.holdingId,
       value: h.value,
     }));
+  } else if (portfolioTotal != null && portfolioTotal !== 100_000) {
+    // Only send portfolio_total if no custom holdings and it differs from default
+    body["portfolio_total"] = portfolioTotal;
   }
   if (requestedMagnitude != null) {
     body["requested_magnitude"] = requestedMagnitude;

@@ -7,6 +7,11 @@ import type {
 } from "../types";
 import { MagnitudeControl } from "./MagnitudeControl";
 
+interface CustomHolding {
+  holdingId: string;
+  value: number;
+}
+
 interface ComparisonSide {
   scenarioKey: ScenarioKey | null;
   magnitude: number | null;
@@ -21,6 +26,8 @@ interface ComparisonResult {
 
 interface ScenarioComparisonProps {
   scenarios: ScenarioDefinition[];
+  customHoldings?: CustomHolding[] | null;
+  portfolioTotal?: number;
   onClose: () => void;
 }
 
@@ -264,29 +271,45 @@ function DiffRow({
 
   const impactA = getResultImpactDollars(resultA);
   const impactB = getResultImpactDollars(resultB);
-  const diff = impactB - impactA;
+  const impactDiff = impactB - impactA;
   const valueA = getResultValue(resultA);
   const valueB = getResultValue(resultB);
   const valueDiff = valueB - valueA;
+  const isPP = resultA.kind === "purchasing-power";
+
+  // Check if both differences are the same (or very close due to rounding)
+  const diffsAreSame = Math.abs(valueDiff - impactDiff) < 0.01;
 
   return (
     <div className="cmp-diff-row">
       <p className="cmp-diff-heading">B vs A difference</p>
       <div className="cmp-diff-metrics">
-        <div className="cmp-diff-metric">
-          <span>Outcome value difference</span>
-          <strong className={valueDiff < 0 ? "number-negative" : valueDiff > 0 ? "number-positive" : ""}>
-            {signedCurrency(valueDiff, resultA.kind === "purchasing-power")}
-          </strong>
-          <small>B outcome minus A outcome</small>
-        </div>
-        <div className="cmp-diff-metric">
-          <span>Impact difference</span>
-          <strong className={diff < 0 ? "number-negative" : diff > 0 ? "number-positive" : ""}>
-            {signedCurrency(diff, resultA.kind === "purchasing-power")}
-          </strong>
-          <small>B impact minus A impact</small>
-        </div>
+        {diffsAreSame ? (
+          <div className="cmp-diff-metric cmp-diff-metric-merged">
+            <span>Difference (B − A)</span>
+            <strong className={valueDiff < 0 ? "number-negative" : valueDiff > 0 ? "number-positive" : ""}>
+              {signedCurrency(valueDiff, isPP)}
+            </strong>
+            <small>Both outcome and impact differ by the same amount</small>
+          </div>
+        ) : (
+          <>
+            <div className="cmp-diff-metric">
+              <span>Outcome value difference</span>
+              <strong className={valueDiff < 0 ? "number-negative" : valueDiff > 0 ? "number-positive" : ""}>
+                {signedCurrency(valueDiff, isPP)}
+              </strong>
+              <small>B outcome minus A outcome</small>
+            </div>
+            <div className="cmp-diff-metric">
+              <span>Impact difference</span>
+              <strong className={impactDiff < 0 ? "number-negative" : impactDiff > 0 ? "number-positive" : ""}>
+                {signedCurrency(impactDiff, isPP)}
+              </strong>
+              <small>B impact minus A impact</small>
+            </div>
+          </>
+        )}
       </div>
       <p className="cmp-diff-note">
         Both scenarios use the same portfolio snapshot. Differences reflect only the scenario assumptions, not portfolio changes.
@@ -296,7 +319,7 @@ function DiffRow({
   );
 }
 
-export function ScenarioComparison({ scenarios, onClose }: ScenarioComparisonProps) {
+export function ScenarioComparison({ scenarios, customHoldings, portfolioTotal = 100_000, onClose }: ScenarioComparisonProps) {
   const [sideA, setSideA] = useState<ComparisonSide>({
     scenarioKey: null, magnitude: null, inflationHorizonMonths: 12,
   });
@@ -311,6 +334,10 @@ export function ScenarioComparison({ scenarios, onClose }: ScenarioComparisonPro
   const [runConfigB, setRunConfigB] = useState<string | null>(null);
 
   const reqRef = useRef({ a: 0, b: 0 });
+
+  const currencyFormatter = new Intl.NumberFormat("en-US", {
+    style: "currency", currency: "USD", maximumFractionDigits: 0,
+  });
 
   function configKey(side: ComparisonSide): string {
     return `${side.scenarioKey}|${side.magnitude ?? "default"}|${side.inflationHorizonMonths}`;
@@ -340,8 +367,9 @@ export function ScenarioComparison({ scenarios, onClose }: ScenarioComparisonPro
         scenario.key,
         horizon,
         null,
-        null,
+        customHoldings ? customHoldings.map(h => ({ holdingId: h.holdingId, value: h.value })) : null,
         magnitudeOverride,
+        customHoldings ? null : (portfolioTotal !== 100_000 ? portfolioTotal : null),
       );
       if (reqRef.current[which] !== id) return;
       setter({ result, error: null, loading: false });
@@ -354,7 +382,7 @@ export function ScenarioComparison({ scenarios, onClose }: ScenarioComparisonPro
         loading: false,
       });
     }
-  }, []);
+  }, [customHoldings, portfolioTotal]);
 
   function handleRunBoth() {
     const scenA = scenarios.find((s) => s.key === sideA.scenarioKey);
@@ -455,7 +483,7 @@ export function ScenarioComparison({ scenarios, onClose }: ScenarioComparisonPro
       )}
 
       <p className="disclosure">
-        Both scenarios use the same synthetic $100,000 portfolio snapshot. Results are illustrative only and not investment advice.
+        Both scenarios use the same {currencyFormatter.format(portfolioTotal)} portfolio snapshot. Results are illustrative only and not investment advice.
         Purchasing-power and nominal asset-shock results measure different things and should not be summed.
       </p>
     </section>

@@ -78,6 +78,12 @@ class AnalyzeRequest(BaseModel):
         default=None,
         description="Optional custom holdings. Each item must have holding_id (str) and value (number >= 0)."
     )
+    portfolio_total: float | None = Field(
+        default=None,
+        ge=1.0,
+        le=50_000_000.0,
+        description="Optional total portfolio value. Scales the default holdings proportionally. Ignored if custom_portfolio is provided."
+    )
     requested_magnitude: float | None = Field(
         default=None,
         description="Optional magnitude override. Must be within the scenario's supported range."
@@ -183,6 +189,10 @@ def analyze(payload: AnalyzeRequest, identity: VerifiedIdentity = Depends(get_id
                 status_code=400,
                 detail={"error": "invalid_portfolio", "message": str(exc)},
             ) from exc
+    elif payload.portfolio_total is not None:
+        # Scale default holdings proportionally to the requested total
+        from .engine import scale_portfolio_to_total
+        custom_holdings = scale_portfolio_to_total(payload.portfolio_total)
 
     # Validate requested_magnitude if provided
     requested_magnitude: float | None = None

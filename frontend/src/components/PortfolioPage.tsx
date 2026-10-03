@@ -75,6 +75,9 @@ export function PortfolioPage({ account, onSave, onDirtyChange, saveRequested, o
   const [formError, setFormError] = useState("");
   const [saved, setSaved] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
+  // Quick scale input
+  const [scaleTarget, setScaleTarget] = useState("");
+  const [scaleError, setScaleError] = useState("");
 
   // Track which field is focused so we don't select-all on re-renders
   const focusedId = useRef<HoldingId | null>(null);
@@ -86,6 +89,8 @@ export function PortfolioPage({ account, onSave, onDirtyChange, saveRequested, o
     setFormError("");
     setSaved(false);
     setIsDirty(false);
+    setScaleTarget("");
+    setScaleError("");
     onDirtyChange?.(false);
   }, [account.id]);
 
@@ -176,7 +181,54 @@ export function PortfolioPage({ account, onSave, onDirtyChange, saveRequested, o
     setFormError("");
     setSaved(false);
     setIsDirty(false);
+    setScaleTarget("");
+    setScaleError("");
     onSave();
+  }
+
+  function handleQuickScale() {
+    const targetTotal = parseDollarInput(scaleTarget);
+    if (isNaN(targetTotal) || targetTotal <= 0) {
+      setScaleError("Enter a valid dollar amount greater than $0.");
+      return;
+    }
+    if (targetTotal > 50_000_000) {
+      setScaleError("Maximum portfolio value is $50,000,000.");
+      return;
+    }
+    
+    // Get current values (from drafts or defaults)
+    const currentValues: Record<HoldingId, number> = {} as Record<HoldingId, number>;
+    let currentTotal = 0;
+    for (const id of SUPPORTED_HOLDING_IDS) {
+      const val = parseDollarInput(drafts[id] ?? "0");
+      currentValues[id] = isNaN(val) ? 0 : val;
+      currentTotal += currentValues[id];
+    }
+    
+    if (currentTotal <= 0) {
+      // Use default allocations if current is zero
+      currentTotal = Object.values(DEFAULT_HOLDINGS).reduce((a, b) => a + b, 0);
+      for (const id of SUPPORTED_HOLDING_IDS) {
+        currentValues[id] = DEFAULT_HOLDINGS[id];
+      }
+    }
+    
+    // Scale proportionally
+    const scaleFactor = targetTotal / currentTotal;
+    const newDrafts: Record<HoldingId, string> = {} as Record<HoldingId, string>;
+    for (const id of SUPPORTED_HOLDING_IDS) {
+      const scaled = Math.round(currentValues[id] * scaleFactor);
+      newDrafts[id] = String(scaled);
+    }
+    
+    setDrafts(newDrafts);
+    setFieldErrors({});
+    setFormError("");
+    setScaleError("");
+    setSaved(false);
+    setIsDirty(true);
+    onDirtyChange?.(true);
   }
 
   // Compute display total from parsed drafts (best-effort; NaN treated as 0)
@@ -212,6 +264,41 @@ export function PortfolioPage({ account, onSave, onDirtyChange, saveRequested, o
       <div className="portfolio-edit-notice">
         <strong>Demo portfolio.</strong> All values are fictional. Changes are saved locally
         in your browser and do not affect real accounts.
+      </div>
+
+      <div className="portfolio-quick-scale">
+        <label htmlFor="quick-scale-input">Quick scale to total:</label>
+        <div className="portfolio-quick-scale-row">
+          <span className="portfolio-edit-prefix" aria-hidden="true">$</span>
+          <input
+            id="quick-scale-input"
+            type="text"
+            inputMode="decimal"
+            className="portfolio-quick-scale-input"
+            placeholder="e.g. 250,000"
+            value={scaleTarget}
+            onChange={(e) => {
+              setScaleTarget(e.target.value.replace(/[^0-9.,$ ]/g, ""));
+              setScaleError("");
+            }}
+            aria-describedby={scaleError ? "scale-error" : undefined}
+          />
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={handleQuickScale}
+          >
+            Scale
+          </button>
+        </div>
+        {scaleError && (
+          <p id="scale-error" className="portfolio-field-error" role="alert">
+            {scaleError}
+          </p>
+        )}
+        <p className="portfolio-quick-scale-hint">
+          Scales all holdings proportionally to reach the target total. Click Save to apply.
+        </p>
       </div>
 
       <div className="portfolio-edit-grid">

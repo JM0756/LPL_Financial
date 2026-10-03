@@ -275,6 +275,10 @@ function App() {
 
     // Build custom holdings from active account if set
     const customHoldings = activeAccount?.customHoldings ?? null;
+    // Compute portfolio total - used for scaling when custom holdings exist
+    const portfolioTotal = customHoldings
+      ? customHoldings.reduce((sum, h) => sum + h.value, 0)
+      : null;
     // Use magnitude override if set and different from default
     const magnitudeOverride =
       magnitude !== null && selectedScenario && magnitude !== selectedScenario.paramDefault
@@ -295,6 +299,7 @@ function App() {
           ? customHoldings.map((h) => ({ holdingId: h.holdingId, value: h.value }))
           : null,
         magnitudeOverride,
+        portfolioTotal,
       );
       if (requestId !== requestIdRef.current) return;
       setAnalysis(result);
@@ -420,8 +425,10 @@ function App() {
           </nav>
 
           <div className="header-right">
-            {isAdvisorMode && (
-              <span className="advisor-mode-label">Advisor Demo</span>
+            {(isAdvisorMode || (AUTH_ENABLED && authSession?.role === "advisor")) && (
+              <span className="advisor-mode-label">
+                {AUTH_ENABLED && authSession?.role === "advisor" ? "Advisor View" : "Advisor Demo"}
+              </span>
             )}
             {API_MODE === "mock" && <span className="mock-mode-label">Demo data</span>}
             {AUTH_ENABLED && authSession ? (
@@ -486,7 +493,8 @@ function App() {
           </div>
         )}
 
-        {isAdvisorMode ? (
+        {/* Show AdvisorView if in advisor mode (demo) or if authenticated as advisor */}
+        {(isAdvisorMode || (AUTH_ENABLED && authSession?.role === "advisor")) ? (
           <AdvisorView />
         ) : navTab === "portfolio" && activeAccount ? (
           <PortfolioPage
@@ -961,6 +969,12 @@ function App() {
               <div id="cmp-panel-anchor">
                 <ScenarioComparison
                   scenarios={scenarios}
+                  customHoldings={activeAccount?.customHoldings ?? null}
+                  portfolioTotal={
+                    activeAccount?.customHoldings
+                      ? activeAccount.customHoldings.reduce((s, h) => s + h.value, 0)
+                      : 100_000
+                  }
                   onClose={() => setShowComparison(false)}
                 />
               </div>
