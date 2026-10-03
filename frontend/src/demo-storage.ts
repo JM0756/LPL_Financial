@@ -51,6 +51,7 @@ export const DEFAULT_HOLDINGS: Record<HoldingId, number> = {
 
 export const MAX_HOLDING_VALUE = 10_000_000; // $10M per holding
 export const MAX_PORTFOLIO_TOTAL = 50_000_000; // $50M total
+export const MAX_PORTFOLIOS_PER_USER = 5;
 
 export interface CustomHolding {
   holdingId: HoldingId;
@@ -165,15 +166,51 @@ export function signOut(): void {
   saveState(state);
 }
 
-export function createAccount(name: string): DemoAccount | null {
+export interface CreateAccountResult {
+  account: DemoAccount | null;
+  error: string | null;
+}
+
+export function createAccount(name: string): CreateAccountResult {
   const state = loadState();
   const profile = state.profiles.find((p) => p.id === state.activeProfileId);
-  if (!profile) return null;
+  if (!profile) return { account: null, error: "No active profile." };
+  if (profile.accounts.length >= MAX_PORTFOLIOS_PER_USER) {
+    return { account: null, error: `You can have up to ${MAX_PORTFOLIOS_PER_USER} portfolios. Remove one to create another.` };
+  }
   const account = makeDefaultAccount(name.trim().slice(0, 60));
   profile.accounts.push(account);
   profile.activeAccountId = account.id;
   saveState(state);
-  return account;
+  return { account, error: null };
+}
+
+export interface RemoveAccountResult {
+  success: boolean;
+  error: string | null;
+  newActiveAccountId: string | null;
+}
+
+export function removeAccount(accountId: string): RemoveAccountResult {
+  const state = loadState();
+  const profile = state.profiles.find((p) => p.id === state.activeProfileId);
+  if (!profile) return { success: false, error: "No active profile.", newActiveAccountId: null };
+  if (profile.accounts.length <= 1) {
+    return { success: false, error: "Cannot remove your only portfolio. Create another first.", newActiveAccountId: null };
+  }
+  const idx = profile.accounts.findIndex((a) => a.id === accountId);
+  if (idx === -1) return { success: false, error: "Portfolio not found.", newActiveAccountId: null };
+  profile.accounts.splice(idx, 1);
+  // Select a remaining portfolio deterministically (first one, or next if removed was first)
+  const newActive = profile.accounts[Math.min(idx, profile.accounts.length - 1)];
+  profile.activeAccountId = newActive.id;
+  saveState(state);
+  return { success: true, error: null, newActiveAccountId: newActive.id };
+}
+
+export function getPortfolioCount(): { current: number; max: number } {
+  const profile = getActiveProfile();
+  return { current: profile?.accounts.length ?? 0, max: MAX_PORTFOLIOS_PER_USER };
 }
 
 export function renameAccount(accountId: string, name: string): boolean {

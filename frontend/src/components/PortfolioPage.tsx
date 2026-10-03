@@ -381,11 +381,10 @@ export function PortfolioPage({ account, onSave, onDirtyChange, saveRequested, o
     <section className="portfolio-page" aria-labelledby="portfolio-page-title">
       <div className="portfolio-page-header">
         <div>
-          <p className="section-kicker">Holdings</p>
+          <p className="section-kicker">Customize Portfolio</p>
           <h2 id="portfolio-page-title">{account.name}</h2>
           <p className="portfolio-page-sub">
-            Edit the dollar amount for each asset category. Only the seven modelled
-            categories are supported. Save to apply changes to scenario analysis.
+            Edit the dollar amount for each asset category. Save to apply changes to scenario analysis.
           </p>
         </div>
         {isCustom && (

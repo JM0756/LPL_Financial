@@ -14,16 +14,20 @@ import {
   getStoredSession,
   type StoredSession,
 } from "./auth";
-import { AccountManager } from "./components/AccountManager";
+import { AccountMenu } from "./components/AccountMenu";
 import { AnalysisResults } from "./components/AnalysisResults";
 import { AuthGate } from "./components/AuthGate";
 import { MagnitudeControl } from "./components/MagnitudeControl";
+import { MyPortfolioPage } from "./components/MyPortfolioPage";
 import { PortfolioPage } from "./components/PortfolioPage";
+import { PortfolioToolbar } from "./components/PortfolioToolbar";
 import { ProfileManager } from "./components/ProfileManager";
+import { RemovePortfolioDialog } from "./components/RemovePortfolioDialog";
 import { ScenarioComparison } from "./components/ScenarioComparison";
 import {
   getActiveAccount,
   getActiveProfile,
+  removeAccount,
   type DemoAccount,
   type DemoProfile,
 } from "./demo-storage";
@@ -52,7 +56,7 @@ const HOLDING_COLORS = [
   "holding-color-6",
 ];
 
-type NavTab = "explore" | "portfolio";
+type NavTab = "my-portfolio" | "explore" | "customize";
 type UnsavedGuardAction = "save" | "discard" | "stay";
 
 function App() {
@@ -61,14 +65,20 @@ function App() {
 
   // Demo profile state (only used when !AUTH_ENABLED)
   const [activeProfile, setActiveProfile] = useState<DemoProfile | null>(() => AUTH_ENABLED ? null : getActiveProfile());
+  // Active account - used for BOTH demo mode and authenticated mode
+  // For authenticated users, we create a synthetic account from the backend portfolio
   const [activeAccount, setActiveAccount] = useState<DemoAccount | null>(() => AUTH_ENABLED ? null : getActiveAccount());
+  // For authenticated users, we need to track portfolios separately
+  const [authPortfolios, setAuthPortfolios] = useState<DemoAccount[]>([]);
   const [portfolio, setPortfolio] = useState<Portfolio | null>(null);
   const [scenarios, setScenarios] = useState<ScenarioDefinition[]>([]);
   const [loadError, setLoadError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  const [navTab, setNavTab] = useState<NavTab>("explore");
+  const [navTab, setNavTab] = useState<NavTab>("my-portfolio");
   const [pendingNav, setPendingNav] = useState<NavTab | null>(null);
+  const [pendingAccountSwitch, setPendingAccountSwitch] = useState<string | null>(null);
   const [portfolioIsDirty, setPortfolioIsDirty] = useState(false);
+  const [removeDialogAccount, setRemoveDialogAccount] = useState<DemoAccount | null>(null);
   const [selectedKey, setSelectedKey] = useState<ScenarioKey | null>(null);
   const [magnitude, setMagnitude] = useState<number | null>(null);
   const [inflationHorizonMonths, setInflationHorizonMonths] = useState<number>(12);
@@ -114,29 +124,80 @@ function App() {
   }
 
   function requestNavTo(tab: NavTab) {
-    if (navTab === "portfolio" && portfolioIsDirty) {
+    if (navTab === "customize" && portfolioIsDirty) {
       setPendingNav(tab);
     } else {
       setNavTab(tab);
     }
   }
 
+  function handleAccountSwitchRequest(accountId: string) {
+    if (navTab === "customize" && portfolioIsDirty) {
+      setPendingAccountSwitch(accountId);
+    } else {
+      import("./demo-storage").then(({ selectAccount }) => {
+        selectAccount(accountId);
+        refreshDemoState();
+      });
+    }
+  }
+
+  // Used by PortfolioToolbar when switching accounts
+  void handleAccountSwitchRequest;
+
   function handleGuardAction(action: UnsavedGuardAction) {
-    if (action === "stay" || !pendingNav) {
+    if (action === "stay") {
       setPendingNav(null);
+      setPendingAccountSwitch(null);
       return;
     }
     if (action === "discard") {
       setPortfolioIsDirty(false);
-      setNavTab(pendingNav);
-      setPendingNav(null);
+      if (pendingNav) {
+        setNavTab(pendingNav);
+        setPendingNav(null);
+      }
+      if (pendingAccountSwitch) {
+        import("./demo-storage").then(({ selectAccount }) => {
+          selectAccount(pendingAccountSwitch);
+          setPendingAccountSwitch(null);
+          refreshDemoState();
+        });
+      }
+    }
+  }
+
+  function handleRemovePortfolio() {
+    if (!removeDialogAccount) return;
+    const result = removeAccount(removeDialogAccount.id);
+    if (result.success) {
+      setRemoveDialogAccount(null);
+      setPortfolioIsDirty(false);
+      setAnalysis(null);
+      setAnalysisError("");
+      refreshDemoState();
+      if (navTab === "customize") setNavTab("my-portfolio");
     }
   }
 
   useEffect(() => {
     const ac = new AbortController();
     Promise.all([getPortfolio(ac.signal), getScenarios(ac.signal)])
-      .then(([p, s]) => { setPortfolio(p); setScenarios(s); })
+      .then(([p, s]) => {
+        setPortfolio(p);
+        setScenarios(s);
+        // For authenticated users, create a default account from the backend portfolio
+        if (AUTH_ENABLED && !activeAccount) {
+          const defaultAccount: DemoAccount = {
+            id: "auth_default",
+            name: "My Portfolio",
+            customHoldings: null,
+            createdAt: new Date().toISOString(),
+          };
+          setActiveAccount(defaultAccount);
+          setAuthPortfolios([defaultAccount]);
+        }
+      })
       .catch((err: unknown) => {
         if (err instanceof DOMException && err.name === "AbortError") return;
         setLoadError(err instanceof Error ? err.message : "Could not load portfolio data.");
@@ -263,8 +324,8 @@ function App() {
     }
   }
 
-  // Determine display name for header
-  const displayName = AUTH_ENABLED ? session?.email : activeProfile?.name;
+  // Determine display name for header - now handled by AccountMenu
+  // const displayName = AUTH_ENABLED ? session?.email : activeProfile?.name;
 
   return (
     <div className="app-shell">
@@ -274,18 +335,14 @@ function App() {
             <img src={wealthLensLogo} alt="WealthLens" className="brand-logo-img" />
           </a>
           <nav className="main-nav-inline" aria-label="Main navigation">
-            <button className={`nav-tab ${navTab === "portfolio" ? "nav-tab-active" : ""}`} type="button" onClick={() => requestNavTo("portfolio")}>Holdings</button>
+            <button className={`nav-tab ${navTab === "my-portfolio" ? "nav-tab-active" : ""}`} type="button" onClick={() => requestNavTo("my-portfolio")}>My Portfolio</button>
             <button className={`nav-tab ${navTab === "explore" ? "nav-tab-active" : ""}`} type="button" onClick={() => requestNavTo("explore")}>Explore</button>
+            <button className={`nav-tab ${navTab === "customize" ? "nav-tab-active" : ""}`} type="button" onClick={() => requestNavTo("customize")}>Customize Portfolio</button>
           </nav>
           <div className="header-right">
             {API_MODE === "mock" && <span className="mock-mode-label">Demo data</span>}
-            {AUTH_ENABLED ? (
-              <div className="auth-user-bar">
-                <span className="auth-user-email">{displayName}</span>
-                <button className="text-button" type="button" onClick={handleSignOut}>
-                  Sign out
-                </button>
-              </div>
+            {AUTH_ENABLED && session ? (
+              <AccountMenu session={session} onSignOut={handleSignOut} />
             ) : (
               <ProfileManager activeProfile={activeProfile} onProfileChange={refreshDemoState} />
             )}
@@ -293,27 +350,57 @@ function App() {
         </div>
       </header>
 
-      {!AUTH_ENABLED && activeProfile && (
+      {/* Portfolio toolbar - shown for both demo and authenticated users */}
+      {activeAccount && (
         <div className="account-bar">
           <div className="account-bar-inner">
-            <AccountManager profile={activeProfile} onAccountChange={refreshDemoState} />
+            {AUTH_ENABLED ? (
+              <PortfolioToolbar
+                profile={{
+                  id: "auth_profile",
+                  name: session?.email ?? "User",
+                  accounts: authPortfolios,
+                  activeAccountId: activeAccount.id,
+                  createdAt: activeAccount.createdAt,
+                }}
+                onAccountChange={() => {
+                  // For authenticated users, refresh from authPortfolios state
+                  setAnalysis(null);
+                  setAnalysisError("");
+                }}
+                onRemoveRequest={(account) => setRemoveDialogAccount(account)}
+                disabled={portfolioIsDirty}
+              />
+            ) : activeProfile ? (
+              <PortfolioToolbar
+                profile={activeProfile}
+                onAccountChange={refreshDemoState}
+                onRemoveRequest={(account) => setRemoveDialogAccount(account)}
+                disabled={portfolioIsDirty}
+              />
+            ) : null}
           </div>
         </div>
       )}
 
       <div className="mobile-nav" aria-label="Main navigation">
         <div className="mobile-nav-inner">
-          <button className={`nav-tab ${navTab === "portfolio" ? "nav-tab-active" : ""}`} type="button" onClick={() => requestNavTo("portfolio")}>Holdings</button>
+          <button className={`nav-tab ${navTab === "my-portfolio" ? "nav-tab-active" : ""}`} type="button" onClick={() => requestNavTo("my-portfolio")}>My Portfolio</button>
           <button className={`nav-tab ${navTab === "explore" ? "nav-tab-active" : ""}`} type="button" onClick={() => requestNavTo("explore")}>Explore</button>
+          <button className={`nav-tab ${navTab === "customize" ? "nav-tab-active" : ""}`} type="button" onClick={() => requestNavTo("customize")}>Customize</button>
         </div>
       </div>
 
       <main id="main-content" className="main-content">
-        {pendingNav && (
+        {(pendingNav || pendingAccountSwitch) && (
           <div className="unsaved-guard-overlay" role="dialog" aria-modal="true" aria-labelledby="guard-title">
             <div className="unsaved-guard-card">
               <h2 id="guard-title" className="unsaved-guard-title">Unsaved changes</h2>
-              <p className="unsaved-guard-body">Your Holdings have unsaved edits.</p>
+              <p className="unsaved-guard-body">
+                {pendingAccountSwitch
+                  ? "Your portfolio has unsaved edits. Save or discard before switching portfolios."
+                  : "Your portfolio has unsaved edits."}
+              </p>
               <div className="unsaved-guard-actions">
                 <button className="primary-button" type="button" onClick={() => window.dispatchEvent(new CustomEvent("wl:portfolio-save-request"))}>Save changes</button>
                 <button className="secondary-button" type="button" onClick={() => handleGuardAction("discard")}>Discard</button>
@@ -323,15 +410,30 @@ function App() {
           </div>
         )}
 
-        {navTab === "portfolio" && activeAccount ? (
+        {removeDialogAccount && (
+          <RemovePortfolioDialog
+            account={removeDialogAccount}
+            hasUnsavedEdits={portfolioIsDirty}
+            onConfirm={handleRemovePortfolio}
+            onCancel={() => setRemoveDialogAccount(null)}
+          />
+        )}
+
+        {navTab === "my-portfolio" && activeAccount && portfolio ? (
+          <MyPortfolioPage
+            account={activeAccount}
+            onExplore={() => setNavTab("explore")}
+            onCustomize={() => setNavTab("customize")}
+          />
+        ) : navTab === "customize" && activeAccount && portfolio ? (
           <PortfolioPage
             account={activeAccount}
             onDirtyChange={setPortfolioIsDirty}
-            onSave={() => { setPortfolioIsDirty(false); refreshDemoState(); setAnalysis(null); setAnalysisError(""); if (pendingNav) { setNavTab(pendingNav); setPendingNav(null); } }}
-            saveRequested={!!pendingNav}
+            onSave={() => { setPortfolioIsDirty(false); refreshDemoState(); setAnalysis(null); setAnalysisError(""); if (pendingNav) { setNavTab(pendingNav); setPendingNav(null); } if (pendingAccountSwitch) { import("./demo-storage").then(({ selectAccount }) => { selectAccount(pendingAccountSwitch); setPendingAccountSwitch(null); refreshDemoState(); }); } }}
+            saveRequested={!!(pendingNav || pendingAccountSwitch)}
             onExplore={() => setNavTab("explore")}
           />
-        ) : (
+        ) : navTab === "explore" ? (
           <>
             <section className="intro-section" aria-labelledby="page-title">
               <h1 id="page-title">See your portfolio from a new perspective.</h1>
@@ -381,7 +483,7 @@ function App() {
                   </ul>
                   <p className="portfolio-note">{activeAccount?.customHoldings ? "Custom portfolio saved in your browser." : "This fictional portfolio is used consistently across all WealthLens demonstrations."}</p>
                   <div className="portfolio-card-actions">
-                    <button className="text-button portfolio-edit-link" type="button" onClick={() => requestNavTo("portfolio")}>Edit holdings →</button>
+                    <button className="text-button portfolio-edit-link" type="button" onClick={() => requestNavTo("customize")}>Customize portfolio →</button>
                   </div>
                 </aside>
 
@@ -518,6 +620,10 @@ function App() {
 
             <p className="disclosure">Illustrative scenario analysis based on predefined assumptions. This is not a forecast or investment recommendation.</p>
           </>
+        ) : (
+          <div className="loading-state" role="status">
+            {isLoading ? "Loading portfolio data…" : "Initializing…"}
+          </div>
         )}
       </main>
 
