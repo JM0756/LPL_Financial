@@ -5,13 +5,9 @@
  * Uses localStorage with user-specific keys to prevent data leakage.
  */
 
-import type { CustomHolding, DemoAccount, HoldingId } from "./demo-storage";
+import type { CustomHolding, DemoAccount } from "./demo-storage";
 import {
-  DEFAULT_HOLDINGS,
-  MAX_HOLDING_VALUE,
-  MAX_PORTFOLIO_TOTAL,
   MAX_PORTFOLIOS_PER_USER,
-  SUPPORTED_HOLDING_IDS,
   validateHoldings,
 } from "./demo-storage";
 

@@ -27,21 +27,16 @@ import { ScenarioComparison } from "./components/ScenarioComparison";
 import {
   getActiveAccount,
   getActiveProfile,
-  getPortfolioCount,
   removeAccount,
   selectAccount,
   type DemoAccount,
   type DemoProfile,
 } from "./demo-storage";
 import {
-  createAuthPortfolio,
   getActiveAuthPortfolio,
-  getAuthPortfolioCount,
   getAuthPortfolios,
   removeAuthPortfolio,
-  renameAuthPortfolio,
   selectAuthPortfolio,
-  updateAuthPortfolioHoldings,
 } from "./auth-storage";
 import wealthLensLogo from "./assets/Wealth Lens image .jpeg";
 import type {
@@ -511,10 +506,31 @@ function App() {
                 <aside className="portfolio-card" aria-labelledby="portfolio-title">
                   <div className="card-heading">
                     <div>
-                      <p className="section-kicker">{activeAccount?.customHoldings ? "Custom portfolio" : "Synthetic portfolio"}</p>
+                      <p className="section-kicker">Portfolio to analyze</p>
                       <h2 id="portfolio-title">{activeAccount?.name ?? "Your starting point"}</h2>
                     </div>
                     <span className="portfolio-badge">{activeAccount?.customHoldings ? "Custom" : "Demo"}</span>
+                  </div>
+                  {/* Portfolio selector dropdown */}
+                  <div className="portfolio-selector-row">
+                    <select
+                      className="portfolio-selector"
+                      value={activeAccount?.id ?? ""}
+                      onChange={(e) => {
+                        const portfolioId = e.target.value;
+                        if (AUTH_ENABLED && session?.email) {
+                          selectAuthPortfolio(session.email, portfolioId);
+                        } else {
+                          selectAccount(portfolioId);
+                        }
+                        refreshDemoState();
+                      }}
+                      aria-label="Select portfolio to analyze"
+                    >
+                      {(AUTH_ENABLED ? authPortfolios : (activeProfile?.accounts ?? [])).map((p) => (
+                        <option key={p.id} value={p.id}>{p.name}</option>
+                      ))}
+                    </select>
                   </div>
                   <div className="portfolio-total">
                     <span>Current value</span>

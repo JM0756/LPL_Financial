@@ -7,12 +7,19 @@ import {
   type DemoAccount,
   type DemoProfile,
 } from "../demo-storage";
+import {
+  createAuthPortfolio,
+  getAuthPortfolioCount,
+  renameAuthPortfolio,
+  selectAuthPortfolio,
+} from "../auth-storage";
 
 interface PortfolioToolbarProps {
   profile: DemoProfile;
   onAccountChange: () => void;
   onRemoveRequest: (account: DemoAccount) => void;
   disabled?: boolean;
+  userEmail?: string; // For authenticated users
 }
 
 export function PortfolioToolbar({
@@ -20,6 +27,7 @@ export function PortfolioToolbar({
   onAccountChange,
   onRemoveRequest,
   disabled,
+  userEmail,
 }: PortfolioToolbarProps) {
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState("");
@@ -29,7 +37,7 @@ export function PortfolioToolbar({
 
   const activeAccount =
     profile.accounts.find((a) => a.id === profile.activeAccountId) ?? profile.accounts[0];
-  const { current, max } = getPortfolioCount();
+  const { current, max } = userEmail ? getAuthPortfolioCount(userEmail) : getPortfolioCount();
   const atLimit = current >= max;
   const canRemove = profile.accounts.length > 1;
 
@@ -39,7 +47,9 @@ export function PortfolioToolbar({
       setError("Enter a portfolio name.");
       return;
     }
-    const result = createAccount(trimmed);
+    const result = userEmail
+      ? createAuthPortfolio(userEmail, trimmed)
+      : createAccount(trimmed);
     if (result.error) {
       setError(result.error);
       return;
@@ -56,7 +66,11 @@ export function PortfolioToolbar({
       setError("Enter a name.");
       return;
     }
-    renameAccount(id, trimmed);
+    if (userEmail) {
+      renameAuthPortfolio(userEmail, id, trimmed);
+    } else {
+      renameAccount(id, trimmed);
+    }
     setRenamingId(null);
     setRenameValue("");
     setError("");
@@ -65,7 +79,11 @@ export function PortfolioToolbar({
 
   function handleSelect(id: string) {
     if (disabled) return;
-    selectAccount(id);
+    if (userEmail) {
+      selectAuthPortfolio(userEmail, id);
+    } else {
+      selectAccount(id);
+    }
     onAccountChange();
   }
 

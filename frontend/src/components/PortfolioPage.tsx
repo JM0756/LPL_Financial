@@ -12,6 +12,10 @@ import {
   type DemoAccount,
   type HoldingId,
 } from "../demo-storage";
+import {
+  resetAuthPortfolioToDefault,
+  updateAuthPortfolioHoldings,
+} from "../auth-storage";
 
 type AssetClass = "Equity" | "Fixed Income" | "Cash";
 const ASSET_CLASS_COLORS: Record<AssetClass, string> = {
@@ -26,6 +30,7 @@ interface PortfolioPageProps {
   onDirtyChange?: (dirty: boolean) => void;
   saveRequested?: boolean;
   onExplore?: () => void;
+  userEmail?: string; // For authenticated users
 }
 
 interface AllocationData {
@@ -137,7 +142,7 @@ function savedValuesToDrafts(account: DemoAccount): Record<HoldingId, string> {
   ) as Record<HoldingId, string>;
 }
 
-export function PortfolioPage({ account, onSave, onDirtyChange, saveRequested, onExplore }: PortfolioPageProps) {
+export function PortfolioPage({ account, onSave, onDirtyChange, saveRequested, onExplore, userEmail }: PortfolioPageProps) {
   // drafts: local string state while editing — never auto-formatted while typing
   const [drafts, setDrafts] = useState<Record<HoldingId, string>>(() =>
     savedValuesToDrafts(account),
@@ -228,7 +233,16 @@ export function PortfolioPage({ account, onSave, onDirtyChange, saveRequested, o
       return;
     }
 
-    updateAccountHoldings(account.id, holdings);
+    // Use auth-storage for authenticated users, demo-storage otherwise
+    const success = userEmail
+      ? updateAuthPortfolioHoldings(userEmail, account.id, holdings)
+      : updateAccountHoldings(account.id, holdings);
+    
+    if (!success) {
+      setFormError("Failed to save portfolio. Please try again.");
+      return;
+    }
+
     setSaved(true);
     setIsDirty(false);
     setFormError("");
@@ -247,7 +261,12 @@ export function PortfolioPage({ account, onSave, onDirtyChange, saveRequested, o
   }
 
   function handleReset() {
-    resetAccountToDefault(account.id);
+    // Use auth-storage for authenticated users, demo-storage otherwise
+    if (userEmail) {
+      resetAuthPortfolioToDefault(userEmail, account.id);
+    } else {
+      resetAccountToDefault(account.id);
+    }
     const resetDrafts = savedValuesToDrafts({ ...account, customHoldings: null });
     setDrafts(resetDrafts);
     setFieldErrors({});
@@ -366,7 +385,16 @@ export function PortfolioPage({ account, onSave, onDirtyChange, saveRequested, o
       return;
     }
 
-    updateAccountHoldings(account.id, holdings);
+    // Use auth-storage for authenticated users, demo-storage otherwise
+    const success = userEmail
+      ? updateAuthPortfolioHoldings(userEmail, account.id, holdings)
+      : updateAccountHoldings(account.id, holdings);
+    
+    if (!success) {
+      setFormError("Failed to save portfolio. Please try again.");
+      return;
+    }
+
     setSaved(true);
     setIsDirty(false);
     setFormError("");
